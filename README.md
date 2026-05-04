@@ -137,6 +137,8 @@ stellar contract test
 
 ## Contribution Guide (Drips Wave)
 
+Full contributor workflow, coding standards, and PR expectations are in **[CONTRIBUTING.md](./CONTRIBUTING.md)**.
+
 Quorum is designed for reward-based collaboration via [Stellar Drips Wave](https://drips.network/wave/stellar).
 
 1. Pick an open issue tagged for Wave work
