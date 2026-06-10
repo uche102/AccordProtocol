@@ -1,4 +1,4 @@
-import type { Proposal } from "../types/quorum";
+import type { Proposal } from "../types/accord";
 import { ProposalCard } from "../components/ProposalCard";
 
 export function HistoryPage({

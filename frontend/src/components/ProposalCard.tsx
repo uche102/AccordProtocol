@@ -1,4 +1,4 @@
-import type { Proposal } from "../types/quorum";
+import type { Proposal } from "../types/accord";
 import { ApprovalBar } from "./ApprovalBar";
 import { StatusBadge } from "./StatusBadge";
 
@@ -17,6 +17,11 @@ export function ProposalCard({ proposal, onApprove }: ProposalCardProps) {
             Send {proposal.amount} {proposal.token}
           </p>
           <p className="text-zinc-500 text-sm font-mono mt-0.5">→ {proposal.to}</p>
+          {proposal.description && (
+            <p className="text-zinc-500 text-xs mt-1.5 leading-relaxed max-w-sm">
+              {proposal.description}
+            </p>
+          )}
         </div>
         <StatusBadge status={proposal.status} />
       </div>

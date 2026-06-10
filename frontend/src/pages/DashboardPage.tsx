@@ -1,4 +1,4 @@
-import type { DashboardStat, Owner, Proposal } from "../types/quorum";
+import type { DashboardStat, Owner, Proposal } from "../types/accord";
 import { ProposalCard } from "../components/ProposalCard";
 import { StatCard } from "../components/StatCard";
 

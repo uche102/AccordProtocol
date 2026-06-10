@@ -1,6 +1,6 @@
-# Contributing to Quorum Protocol
+# Contributing to Accord Protocol
 
-Thank you for your interest in improving Quorum. This document is the **authoritative contributor guide** for this repository: how to set up your environment, how we expect changes to be proposed and reviewed, and how to work effectively with the project’s current **prototype** phase (dummy frontend data plus Soroban contract scaffold).
+Thank you for your interest in improving Accord. This document is the **authoritative contributor guide** for this repository: how to set up your environment, how we expect changes to be proposed and reviewed, and how to work effectively with the project’s current **prototype** phase (dummy frontend data plus Soroban contract scaffold).
 
 Please read the [README](./README.md) first for product context, architecture, and security expectations.
 
@@ -103,11 +103,11 @@ On Stellar, transactions (including contract deploy) pay a **small fee in XLM**.
 **1. Create a local deployer identity (this *is* your “wallet” for the CLI)**
 
 ```bash
-stellar keys generate quorum-deployer
-stellar keys public-key quorum-deployer
+stellar keys generate accord-deployer
+stellar keys public-key accord-deployer
 ```
 
-The second command prints your **public key** (starts with `G…`). That account will pay fees when you pass `--source-account quorum-deployer` to `stellar contract deploy` and similar commands.
+The second command prints your **public key** (starts with `G…`). That account will pay fees when you pass `--source-account accord-deployer` to `stellar contract deploy` and similar commands.
 
 **2. Fund it with testnet XLM**
 
@@ -115,7 +115,7 @@ Try the built-in faucet (uses the configured testnet RPC):
 
 ```bash
 stellar network use testnet
-stellar keys fund quorum-deployer --network testnet
+stellar keys fund accord-deployer --network testnet
 ```
 
 If that fails or rate-limits, use **Friendbot** in a browser: open  
@@ -134,15 +134,15 @@ stellar network use testnet
 ```bash
 stellar contract deploy \
   --network testnet \
-  --source-account quorum-deployer \
-  --package quorum
+  --source-account accord-deployer \
+  --package accord
 ```
 
 **How this relates to “a wallet”**
 
 | Approach | What pays fees | Typical use |
 |----------|----------------|-------------|
-| **Stellar CLI identity** | The key you generated (`quorum-deployer`) | Building, deploying, `stellar contract invoke` from terminal |
+| **Stellar CLI identity** | The key you generated (`accord-deployer`) | Building, deploying, `stellar contract invoke` from terminal |
 | **Freighter / other wallet** | Account you unlock in the browser | dApps, signing in the UI (your frontend does not use this yet) |
 
 Keep your **secret key / seed phrase private**. For testnet-only keys, treat them as disposable if they leak, but still avoid committing them to git.
@@ -179,7 +179,7 @@ Understanding where code belongs reduces review churn and merge conflicts.
 
 ### Frontend (`frontend/`)
 
-- **`src/types/quorum.ts`** — Shared domain types (proposals, owners, stats). Extend these deliberately when the data model grows.
+- **`src/types/accord.ts`** — Shared domain types (proposals, owners, stats). Extend these deliberately when the data model grows.
 - **`src/data/mockData.ts`** — **Temporary data layer** until Soroban + wallet integration. New UI features should read/write through app state that is ultimately fed from here (or from a future API layer), not scattered magic constants.
 - **`src/components/`** — Reusable presentational and small interactive pieces.
 - **`src/pages/`** — Route-level or tab-level composition (dashboard, history, etc.).
@@ -190,7 +190,7 @@ Understanding where code belongs reduces review churn and merge conflicts.
 ### Contracts (`contracts/`)
 
 - The workspace is defined by the root **`Cargo.toml`** (`members = ["contracts/*"]`).
-- Today the scaffold lives under **`contracts/quorum/`**. Future multisig work may add **`contracts/multisig/`** (or similar); follow existing patterns in `Cargo.toml` and sibling crates when adding packages.
+- Today the scaffold lives under **`contracts/accord/`**. Future multisig work may add **`contracts/multisig/`** (or similar); follow existing patterns in `Cargo.toml` and sibling crates when adding packages.
 
 ### Do not commit
 
@@ -209,7 +209,7 @@ Understanding where code belongs reduces review churn and merge conflicts.
 
 ### Stellar Drips Wave
 
-Quorum is positioned for participation in **[Stellar Drips Wave](https://drips.network/wave/stellar)**. Program rules can change by season; always follow the **current** official instructions for applying, claiming, or earning rewards.
+Accord is positioned for participation in **[Stellar Drips Wave](https://drips.network/wave/stellar)**. Program rules can change by season; always follow the **current** official instructions for applying, claiming, or earning rewards.
 
 **General expectations:**
 
@@ -338,7 +338,7 @@ If your change touches both areas, run **both** frontend and contract commands a
 
 ## Security and responsible disclosure
 
-Quorum is **not audited** and is under active development. Treat it accordingly.
+Accord is **not audited** and is under active development. Treat it accordingly.
 
 - **Do not open public issues** for unfixed security vulnerabilities.
 - Use **GitHub Security Advisories** (or the contact process maintainers publish) for responsible disclosure.
@@ -361,4 +361,4 @@ If your employer owns your contributions, ensure you have **authorization** to c
 - **Issue-specific questions:** comment on the issue thread.
 - **PR feedback:** keep responses in the PR review thread so decisions stay searchable.
 
-Thank you again for helping make Quorum a solid, contributor-friendly Stellar project.
+Thank you again for helping make Accord a solid, contributor-friendly Stellar project.

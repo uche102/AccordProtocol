@@ -1,13 +1,15 @@
-export type ProposalStatus = "pending" | "ready" | "executed" | "expired";
+export type ProposalStatus = "pending" | "ready" | "executed" | "expired" | "revoked";
 
 export type Proposal = {
   id: number;
   to: string;
   amount: string;
   token: string;
+  description: string;
   approvals: number;
   threshold: number;
   status: ProposalStatus;
+  deadline: string;
   createdAt: string;
 };
 

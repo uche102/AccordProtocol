@@ -1,0 +1,20 @@
+{
+  "files": ["README.md"],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "thegreatfeez",
+      "name": "thegreatfeez",
+      "avatar_url": "https://avatars.githubusercontent.com/u/thegreatfeez?v=4",
+      "profile": "https://github.com/thegreatfeez",
+      "contributions": ["code", "doc", "ideas"]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "accord-protocol",
+  "projectOwner": "thegreatfeez",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
