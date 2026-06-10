@@ -51,7 +51,7 @@ Owner A creates a proposal → Owner B & C approve → threshold met → any own
 | **Contract ID** | `CD4YAMHZETIO3GTHP4JB3SF2LQFQMZ6MW5FUNCTMXYGOVN6AAXDBQKJS` |
 | **Network** | Stellar Testnet |
 | **Explorer** | [View on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CD4YAMHZETIO3GTHP4JB3SF2LQFQMZ6MW5FUNCTMXYGOVN6AAXDBQKJS) |
-| **Frontend** | _Deploy your own with the steps below_ |
+| **Frontend** | [accord-protocol.vercel.app](https://accord-protocol.vercel.app/) |
 
 ---
 
