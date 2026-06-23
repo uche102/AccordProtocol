@@ -7,17 +7,11 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { OwnersPage } from "./pages/OwnersPage";
 import { useContract } from "./hooks/useContract";
 import { useWallet } from "./hooks/useWallet";
-<<<<<<< feature/wallet-ui-and-token-validation-23-26-30-34
-import { approveProposal, executeProposal } from "./lib/submit";
-
-type Page = "dashboard" | "history" | "settings" | "owners";
-import { ProposalCardSkeleton } from "./components/ProposalCardSkeleton";
-=======
 // CHANGE 1: Import revokeProposal from submit.ts
 import { approveProposal, executeProposal, revokeProposal } from "./lib/submit";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 type Page = "dashboard" | "history" | "settings";
->>>>>>> main
 
 export default function App() {
   const [page, setPage] = useState<Page>("dashboard");
@@ -26,7 +20,6 @@ export default function App() {
   const [txPending, setTxPending] = useState(false);
 
   const wallet = useWallet();
-<<<<<<< feature/wallet-ui-and-token-validation-23-26-30-34
   const [copied, setCopied] = useState(false);
 
   function handleCopy() {
@@ -42,10 +35,8 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-=======
   // CHANGE 2: Pass wallet.address into useContract so it can fetch userHasApproved
   const { proposals, owners, stats, loading, error, refresh } = useContract(wallet.address);
->>>>>>> main
 
   const activeProposals = proposals.filter((p) =>
     ["pending", "ready"].includes(p.status)
@@ -102,18 +93,9 @@ export default function App() {
               testnet
             </span>
           </div>
+     
 
           <nav className="flex items-center gap-1">
-<<<<<<< feature/wallet-ui-and-token-validation-23-26-30-34
-            {(["dashboard", "history", "owners", "settings"] as Page[]).map((navPage) => (
-=======
-            {(["dashboard", "history", "settings"] as Page[]).map((navPage) => (
->>>>>>> main
-              <button
-                key={navPage}
-                type="button"
-                onClick={() => setPage(navPage)}
-<<<<<<< feature/wallet-ui-and-token-validation-23-26-30-34
             {[
               { label: "dashboard", to: "/" },
               { label: "history", to: "/history" },
@@ -122,18 +104,17 @@ export default function App() {
               <Link
                 key={label}
                 to={to}
-=======
->>>>>>> main
                 className={`text-sm px-3 py-1.5 rounded-lg capitalize transition-colors ${
-                  page === navPage
+                  currentPath === to
                     ? "bg-zinc-800 text-white"
                     : "text-zinc-500 hover:text-zinc-300"
                 }`}
               >
-                {navPage}
-              </button>
+                {label}
+              </Link>
             ))}
           </nav>
+
 
           {!wallet.installed ? (
             <a
@@ -225,21 +206,6 @@ export default function App() {
           />
         ) : page === "history" ? (
           <HistoryPage proposals={proposals} onApprove={handleApprove} />
-<<<<<<< feature/wallet-ui-and-token-validation-23-26-30-34
-        ) : page === "owners" ? (
-          <OwnersPage
-            owners={owners}
-            threshold={parseInt(stats.find((s) => s.label === "Threshold")?.value.split(" ")[0] || "0")}
-            totalOwners={owners.length}
-          />
-          <HistoryPage
-            historyProposals={historyProposals}
-            onApprove={handleApprove}
-          />
-        ) : page === "settings" ? (
-          <SettingsPage stats={stats} />
-=======
->>>>>>> main
         ) : (
           <>
           <NotFoundPage onGoHome={handleGoHome} />
