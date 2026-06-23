@@ -908,3 +908,9 @@ fn active_count_stays_accurate_mixed() {
         Err(Ok(ContractError::TooManyActiveProposals))
     );
 }
+
+#[test]
+fn get_version_returns_current_version() {
+    let (_, client, _, _, _, _, _) = setup(2);
+    assert_eq!(client.get_version(), 1);
+}

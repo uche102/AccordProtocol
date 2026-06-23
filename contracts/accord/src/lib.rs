@@ -171,6 +171,8 @@ fn bump_persistent<K: IntoVal<Env, Val>>(env: &Env, key: &K) {
 
 // ─── Validation Constants ────────────────────────────────────────────────────
 
+/// Contract version, bumped on each release. Queried via `get_version`.
+const CONTRACT_VERSION: u32 = 1;
 /// Minimum amount: 0.1 stroops of whatever token is used.
 const MIN_AMOUNT: i128 = 1;
 /// Max description: 300 characters.
@@ -879,6 +881,12 @@ impl AccordContract {
     }
 
     // ─── Read-Only Queries ───────────────────────────────────────────────────
+
+    /// Returns the contract version. Useful for frontends and upgrade scripts
+    /// that need to know which version of the contract is deployed.
+    pub fn get_version(_env: Env) -> u32 {
+        CONTRACT_VERSION
+    }
 
     /// Returns the current state of a proposal with a derived status.
     pub fn get_proposal(env: Env, proposal_id: u64) -> Result<Proposal, ContractError> {
