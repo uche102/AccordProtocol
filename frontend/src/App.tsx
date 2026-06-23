@@ -3,11 +3,12 @@ import { CreateProposalModal } from "./components/CreateProposalModal";
 import { DashboardPage } from "./pages/DashboardPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { HistoryPage } from "./pages/HistoryPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { useContract } from "./hooks/useContract";
 import { useWallet } from "./hooks/useWallet";
 import { approveProposal, executeProposal } from "./lib/submit";
 
-type Page = "dashboard" | "history";
+type Page = "dashboard" | "history" | "settings";
 
 export default function App() {
   const [page, setPage] = useState<Page>("dashboard");
@@ -74,7 +75,7 @@ export default function App() {
           </div>
 
           <nav className="flex items-center gap-1">
-            {(["dashboard", "history"] as Page[]).map((navPage) => (
+            {(["dashboard", "history", "settings"] as Page[]).map((navPage) => (
               <button
                 key={navPage}
                 type="button"
@@ -164,6 +165,7 @@ export default function App() {
           />
         ) : (
           <NotFoundPage onGoHome={handleGoHome} />
+          <SettingsPage stats={stats} />
         )}
       </main>
 
