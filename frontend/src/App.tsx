@@ -7,7 +7,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { useContract } from "./hooks/useContract";
 import { useWallet } from "./hooks/useWallet";
 import { approveProposal, executeProposal } from "./lib/submit";
-import { ProposalCardSkeleton } from "./components/ProposalCardSkeleton";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 export default function App() {
   const [showCreate, setShowCreate] = useState(false);
@@ -19,10 +19,6 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
-
-  const activeProposals = proposals.filter((p) =>
-    ["pending", "ready"].includes(p.status)
-  );
 
   async function withTx(fn: () => Promise<void>) {
     if (!wallet.address) {
@@ -118,9 +114,9 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        {(txError || error) && !loading && (
+        {txError && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 mb-6 text-sm text-red-400 flex items-center justify-between">
-            <span>{txError ?? error}</span>
+            <span>{txError}</span>
             <button
               type="button"
               onClick={() => {
@@ -140,60 +136,37 @@ export default function App() {
           </div>
         )}
 
-        {loading ? (
-          <div className="space-y-3">
-            <ProposalCardSkeleton />
-            <ProposalCardSkeleton />
-            <ProposalCardSkeleton />
-          </div>
-        ) : page === "dashboard" ? (
-          <DashboardPage
-            activeProposals={activeProposals}
-            owners={owners}
-            dashboardStats={stats}
-            walletAddress={wallet.address}
-            onApprove={handleApprove}
-            onExecute={handleExecute}
-            onCreateProposal={() => setShowCreate(true)}
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <DashboardPage
+                activeProposals={proposals.filter((p) =>
+                  ["pending", "ready"].includes(p.status)
+                )}
+                owners={owners}
+                dashboardStats={stats}
+                walletAddress={wallet.address}
+                onApprove={handleApprove}
+                onExecute={handleExecute}
+                onCreateProposal={() => setShowCreate(true)}
+                loading={loading}
+                error={error}
+              />
+            }
           />
-        ) : page === "history" ? (
-          <HistoryPage
-            historyProposals={historyProposals}
-            onApprove={handleApprove}
+          <Route
+            path="/history"
+            element={
+              <HistoryPage proposals={proposals} onApprove={handleApprove} />
+            }
           />
-        ) : page === "settings" ? (
-          <SettingsPage stats={stats} />
-        ) : (
-          <NotFoundPage onGoHome={handleGoHome} />
-        ) : (
-          <SettingsPage stats={stats} />
-          </>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <DashboardPage
-                  activeProposals={activeProposals}
-                  owners={owners}
-                  dashboardStats={stats}
-                  walletAddress={wallet.address}
-                  onApprove={handleApprove}
-                  onExecute={handleExecute}
-                  onCreateProposal={() => setShowCreate(true)}
-                />
-              }
-            />
-            <Route
-              path="/history"
-              element={<HistoryPage proposals={proposals} onApprove={handleApprove} />}
-            />
-            <Route
-              path="/settings"
-              element={<SettingsPage stats={stats} />}
-            />
-            <Route path="*" element={<NotFoundPage onGoHome={() => navigate("/")} />} />
-          </Routes>
-        )}
+          <Route
+            path="/settings"
+            element={<SettingsPage stats={stats} />}
+          />
+          <Route path="*" element={<NotFoundPage onGoHome={() => navigate("/")} />} />
+        </Routes>
       </main>
 
       {showCreate && (
