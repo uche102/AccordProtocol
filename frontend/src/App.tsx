@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { CreateProposalModal } from "./components/CreateProposalModal";
 import { DashboardPage } from "./pages/DashboardPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useContract } from "./hooks/useContract";
@@ -148,6 +147,8 @@ export default function App() {
             <ProposalCardSkeleton />
           </div>
         ) : (
+          <SettingsPage stats={stats} />
+          </>
           <Routes>
             <Route
               path="/"
