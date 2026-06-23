@@ -943,15 +943,40 @@ impl AccordContract {
     // ─── Upgrade ─────────────────────────────────────────────────────────────
 
     /// Replaces the contract WASM in-place. Keeps all storage (owners, proposals, approvals).
-    /// Caller must be an owner. For stronger guarantees, collect off-chain consensus from
-    /// all owners before calling — only one signature is required on-chain.
+    /// Requires at least `threshold` distinct registered owners to co-sign the upgrade
+    /// off-chain and be listed in `approvers`. Every address in `approvers` must call
+    /// `require_auth()`, must be a registered owner, and must appear only once.
+    ///
+    /// # Arguments
+    /// * `approvers` - List of owner addresses co-signing the upgrade (minimum: threshold).
+    /// * `new_wasm_hash` - The SHA-256 hash of the new contract WASM to deploy.
     pub fn upgrade(
         env: Env,
-        caller: Address,
+        approvers: Vec<Address>,
         new_wasm_hash: BytesN<32>,
     ) -> Result<(), ContractError> {
-        caller.require_auth();
-        require_owner(&env, &caller)?;
+        let threshold = read_threshold(&env)?;
+
+        // Must have at least `threshold` approvers.
+        if approvers.len() < threshold {
+            return Err(ContractError::ThresholdNotMet);
+        }
+
+        // Check for duplicate addresses before requiring auth.
+        for i in 0..approvers.len() {
+            for j in (i + 1)..approvers.len() {
+                if approvers.get(i).unwrap() == approvers.get(j).unwrap() {
+                    return Err(ContractError::DuplicateOwner);
+                }
+            }
+        }
+
+        // Require auth from every approver and verify each is an owner.
+        for approver in approvers.iter() {
+            approver.require_auth();
+            require_owner(&env, &approver)?;
+        }
+
         env.deployer().update_current_contract_wasm(new_wasm_hash);
         Ok(())
     }
