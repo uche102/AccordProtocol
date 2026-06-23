@@ -7,6 +7,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { useContract } from "./hooks/useContract";
 import { useWallet } from "./hooks/useWallet";
 import { approveProposal, executeProposal } from "./lib/submit";
+import { ProposalCardSkeleton } from "./components/ProposalCardSkeleton";
 
 type Page = "dashboard" | "history" | "settings";
 
@@ -143,8 +144,10 @@ export default function App() {
         )}
 
         {loading ? (
-          <div className="text-center py-16 text-zinc-500 text-sm">
-            Loading contract data…
+          <div className="space-y-3">
+            <ProposalCardSkeleton />
+            <ProposalCardSkeleton />
+            <ProposalCardSkeleton />
           </div>
         ) : page === "dashboard" ? (
           <DashboardPage
