@@ -111,6 +111,16 @@ export async function getProposalsPaged(
   return Array.isArray(result) ? result : [];
 }
 
+export async function getProposal(id: number): Promise<Proposal> {
+  const [val, thresh] = await Promise.all([
+    simulateView("get_proposal", [
+      nativeToScVal(BigInt(id), { type: "u64" }),
+    ]),
+    getThreshold(),
+  ]);
+  return mapProposal(scValToNative(val), thresh);
+}
+
 export async function hasApproved(
   walletAddress: string,
   proposalId: number
