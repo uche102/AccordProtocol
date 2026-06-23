@@ -1,3 +1,4 @@
+import Server from "@stellar/stellar-sdk";
 import {
   isConnected,
   getAddress,
@@ -58,4 +59,24 @@ export async function signTx(
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Sign failed" };
   }
+}
+
+export async function getAccountBalances(address: string): Promise<{ xlm: string; usdc: string }>{
+  const server = new Server("https://horizon-testnet.stellar.org");
+  const acct = await server.loadAccount(address);
+  let xlm = "0.00";
+  let usdc = "0.00";
+
+  for (const b of acct.balances) {
+    // native XLM
+    if ((b as any).asset_type === "native") {
+      const parsed = parseFloat((b as any).balance || "0");
+      if (!Number.isNaN(parsed)) xlm = parsed.toFixed(2);
+    } else if ((b as any).asset_code === "USDC") {
+      const parsed = parseFloat((b as any).balance || "0");
+      if (!Number.isNaN(parsed)) usdc = parsed.toFixed(2);
+    }
+  }
+
+  return { xlm, usdc };
 }

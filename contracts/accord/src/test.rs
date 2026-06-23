@@ -266,6 +266,38 @@ fn create_proposal_rejects_empty_description() {
     );
 }
 
+// New tests for issue #34: invalid vs valid token handling
+#[test]
+fn create_proposal_rejects_invalid_token() {
+    let (env, client, owner_a, _, _, _, _) = setup(2);
+    let invalid_token = Address::generate(&env);
+    assert_eq!(
+        client.try_create_proposal(
+            &owner_a,
+            &Address::generate(&env),
+            &1_000_000_i128,
+            &invalid_token,
+            &str(&env, "Bad token"),
+            &DEADLINE,
+        ),
+        Err(Ok(ContractError::InvalidToken))
+    );
+}
+
+#[test]
+fn create_proposal_accepts_valid_token() {
+    let (env, client, owner_a, _, _, _, token_client) = setup(2);
+    let id = client.create_proposal(
+        &owner_a,
+        &Address::generate(&env),
+        &1_000_000_i128,
+        &token_client.address,
+        &str(&env, "Valid token"),
+        &DEADLINE,
+    );
+    assert!(id > 0);
+}
+
 #[test]
 fn description_boundary() {
     let (env, client, owner_a, _, _, _, token_client) = setup(2);

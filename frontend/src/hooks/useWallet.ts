@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { connectWallet, freighterInstalled, getWalletAddress } from "../lib/wallet";
+import { connectWallet, freighterInstalled, getWalletAddress, getAccountBalances } from "../lib/wallet";
 
 export type WalletState = {
   installed: boolean;
@@ -7,12 +7,16 @@ export type WalletState = {
   connecting: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
+  xlmBalance?: string | null;
+  usdcBalance?: string | null;
 };
 
 export function useWallet(): WalletState {
   const [installed, setInstalled] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [xlmBalance, setXlmBalance] = useState<string | null>(null);
+  const [usdcBalance, setUsdcBalance] = useState<string | null>(null);
 
   // On mount: check if Freighter is present and already authorized
   useEffect(() => {
@@ -25,6 +29,24 @@ export function useWallet(): WalletState {
       }
     });
   }, []);
+
+  // Fetch balances whenever address becomes non-null. Swallow errors silently.
+  useEffect(() => {
+    if (!address) {
+      setXlmBalance(null);
+      setUsdcBalance(null);
+      return;
+    }
+
+    getAccountBalances(address)
+      .then((res) => {
+        setXlmBalance(res.xlm);
+        setUsdcBalance(res.usdc);
+      })
+      .catch(() => {
+        // ignore failures — keep balances null
+      });
+  }, [address]);
 
   const connect = useCallback(async () => {
     setConnecting(true);
@@ -40,7 +62,9 @@ export function useWallet(): WalletState {
   const disconnect = useCallback(() => {
     // Freighter has no programmatic disconnect — clear local state only.
     setAddress(null);
+    setXlmBalance(null);
+    setUsdcBalance(null);
   }, []);
 
-  return { installed, address, connecting, connect, disconnect };
+  return { installed, address, connecting, connect, disconnect, xlmBalance, usdcBalance };
 }
