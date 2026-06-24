@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createProposal, estimateCreateProposalFee } from "../lib/submit";
 import { displayToStroops } from "../lib/soroban";
+import { StrKey } from "@stellar/stellar-sdk";
 // Testnet token addresses — swap for mainnet when ready
 const TOKEN_ADDRESSES: Record<string, string> = {
   XLM: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
@@ -27,6 +28,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
   };
 
   const [to, setTo] = useState("");
+  const [recipientTouched, setRecipientTouched] = useState(false);
   const [amount, setAmount] = useState("");
   const [token, setToken] = useState("XLM");
   const [description, setDescription] = useState("");
@@ -83,6 +85,11 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
     }
     if (!to.trim() || !amount.trim() || !description.trim()) {
       setError("Recipient, amount, and description are required.");
+      return;
+    }
+
+    if (!StrKey.isValidEd25519PublicKey(to.trim())) {
+      setError("Enter a valid Stellar address");
       return;
     }
 
@@ -174,10 +181,17 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
             </label>
             <input
               value={to}
-              onChange={(e) => setTo(e.target.value)}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setRecipientTouched(true);
+              }}
+              onBlur={() => setRecipientTouched(true)}
               placeholder="G..."
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
             />
+            {recipientTouched && !StrKey.isValidEd25519PublicKey(to.trim()) && (
+              <p className="text-xs text-red-400 mt-1">Enter a valid Stellar address</p>
+            )}
           </div>
 
           <div className="flex gap-3">
