@@ -799,6 +799,30 @@ fn execute_rejects_expired_even_if_approved() {
     );
 }
 
+#[test]
+fn expired_status_takes_priority_over_ready() {
+    let (env, client, owner_a, owner_b, _, _, token_client) = setup(2);
+    let deadline = NOW + 3_600;
+    let id = client.create_proposal(
+        &owner_a,
+        &Address::generate(&env),
+        &1_000_000_i128,
+        &token_client.address,
+        &str(&env, "Ready then expired"),
+        &deadline,
+        &ProposalCategory::Transfer,
+    );
+
+    // Two owners approve to meet the threshold of 2 while still before the deadline.
+    client.approve(&owner_a, &id);
+    client.approve(&owner_b, &id);
+    assert_eq!(client.get_proposal(&id).status, ProposalStatus::Ready);
+
+    // Once the deadline passes, Expired must take priority over Ready.
+    set_timestamp(&env, deadline + 1);
+    assert_eq!(client.get_proposal(&id).status, ProposalStatus::Expired);
+}
+
 // ─── Query ───────────────────────────────────────────────────────────────────
 
 #[test]
