@@ -7,7 +7,7 @@ import {
   xdr,
 } from "@stellar/stellar-sdk";
 import type { Proposal, ProposalStatus } from "../types/accord";
-import { stroopsToDisplay } from "./soroban";
+import { stroopsToDisplay, formatDeadline, shortenAddr } from "./soroban";
 
 const RPC_URL = import.meta.env.VITE_SOROBAN_RPC_URL as string;
 const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ADDRESS as string;
@@ -49,20 +49,9 @@ function mapStatus(raw: unknown): ProposalStatus {
 }
 
 
-function formatDeadline(ts: bigint): string {
-  return new Date(Number(ts) * 1000).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function shortenAddr(addr: string): string {
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function mapProposal(raw: any, threshold: number): Proposal {
+  const rawDeadline = BigInt(raw.deadline);
   return {
     id: Number(raw.id),
     to: shortenAddr(String(raw.to)),
@@ -72,7 +61,8 @@ export function mapProposal(raw: any, threshold: number): Proposal {
     approvals: Number(raw.approvals),
     threshold,
     status: mapStatus(raw.status),
-    deadline: formatDeadline(BigInt(raw.deadline)),
+    deadline: formatDeadline(rawDeadline),
+    deadlineTs: Number(rawDeadline),
     createdAt: `proposal #${Number(raw.id)}`,
     proposer: shortenAddr(String(raw.proposer)),
     userHasApproved: false,

@@ -142,6 +142,67 @@ https://lab.stellar.org/smart-contracts/contract-explorer?contractId=YOUR_CONTRA
 
 ---
 
-## Re-deploying
+## Upgrading the Contract
 
-The contract does not support upgradeability in the current version (planned roadmap item). To deploy a new version, deploy a fresh contract instance and re-initialize with the same owners.
+The contract supports in-place upgrades through a two-step WASM upload and upgrade flow. Only an existing owner may call the `upgrade` function. All on-chain storage (proposals, owners, threshold) is preserved after a successful upgrade.
+
+**Step 1 — Upload the new WASM and obtain the WASM hash:**
+
+```bash
+stellar contract upload \
+  --network testnet \
+  --source-account accord-deployer \
+  --wasm target/wasm32v1-none/release/accord.wasm
+```
+
+The command prints the WASM hash — save it for the next step.
+
+**Step 2 — Invoke `upgrade` on the live contract:**
+
+```bash
+stellar contract invoke \
+  --network testnet \
+  --source-account accord-deployer \
+  --id CONTRACT_ID \
+  -- upgrade \
+  --caller accord-deployer \
+  --new_wasm_hash WASM_HASH
+```
+
+Replace `CONTRACT_ID` with the live contract address and `WASM_HASH` with the hash from Step 1. The contract ID and all on-chain storage are preserved after a successful upgrade.
+
+---
+
+## Troubleshooting
+
+**Auth errors (`Error(Contract, #3)` — Unauthorized)**
+
+The caller is not a registered owner, or insufficient XLM was available to cover the Soroban authorization fee. Verify the `--source-account` is one of the contract's owners and that the account holds enough XLM (a few stroops above the base reserve is usually sufficient).
+
+**Fee errors (transaction rejected for insufficient balance)**
+
+The submitting account does not have enough XLM to cover the transaction fee. Fund the account with at least 10 XLM before retrying:
+
+```bash
+stellar keys fund accord-deployer --network testnet
+```
+
+**RPC timeout errors**
+
+The Soroban RPC node did not respond within the CLI timeout. Check the RPC node health at `https://soroban-testnet.stellar.org/` and retry the command. If the node is healthy, increase the `--timeout` flag (e.g. `--timeout 120`) or switch to a different RPC endpoint.
+
+---
+
+## Post-Deployment Verification Checklist
+
+Run these checks after every deploy or upgrade to confirm the contract is live and healthy:
+
+- [ ] **Contract responds** — call `get_threshold` and confirm it returns the expected integer:
+  ```bash
+  stellar contract invoke --network testnet --id CONTRACT_ID -- get_threshold
+  ```
+- [ ] **WASM hash matches** — open the contract page on Stellar Expert and verify the WASM hash matches the one printed during `stellar contract upload`:
+  ```
+  https://stellar.expert/explorer/testnet/contract/CONTRACT_ID
+  ```
+- [ ] **Frontend connects** — start the frontend (`npm run dev`), open the app in a browser, and confirm proposals load without errors. If the page shows a connection error, double-check `VITE_CONTRACT_ADDRESS` and `VITE_SOROBAN_RPC_URL` in `frontend/.env.local`.

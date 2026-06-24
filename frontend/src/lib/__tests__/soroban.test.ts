@@ -1,5 +1,5 @@
 import { expect, test, describe } from "vitest";
-import { stroopsToDisplay, displayToStroops, contractErrorMessage } from "../soroban";
+import { stroopsToDisplay, displayToStroops, contractErrorMessage, formatDeadline, shortenAddr } from "../soroban";
 
 describe("stroopsToDisplay", () => {
   test("zero", () => {
@@ -78,5 +78,33 @@ describe("contractErrorMessage", () => {
   test("RPC formatted errors parse correctly", () => {
     expect(contractErrorMessage("Error(Contract,#3)")).toContain("Unauthorized");
     expect(contractErrorMessage("Error(Contract, #6)")).toContain("Proposal not found");
+  });
+});
+
+describe("formatDeadline", () => {
+  test("returns human-readable date string for a known Unix timestamp", () => {
+    // 2025-01-15 12:00:00 UTC — noon UTC stays Jan 15 across UTC-11..UTC+11
+    const result = formatDeadline(1736942400n);
+    expect(result).toBe("Jan 15, 2025");
+  });
+
+  test("returns a non-empty string for any valid timestamp", () => {
+    const result = formatDeadline(1700000000n);
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+describe("shortenAddr", () => {
+  test("returns six leading characters, ellipsis, four trailing characters", () => {
+    const addr = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
+    const result = shortenAddr(addr);
+    expect(result).toBe("GAAZI4...CCWN");
+  });
+
+  test("format is XXXXXX...YYYY for a 56-character Stellar address", () => {
+    const addr = "GBTEST12345678901234567890123456789012345678901234WXYZ";
+    const result = shortenAddr(addr);
+    expect(result).toMatch(/^.{6}\.\.\..{4}$/);
   });
 });

@@ -10,6 +10,7 @@ export type Proposal = {
   threshold: number;
   status: ProposalStatus;
   deadline: string;
+  deadlineTs: number;
   createdAt: string;
   proposer: string;
   userHasApproved: boolean;

@@ -12,6 +12,8 @@ import { OwnersPage } from "./pages/OwnersPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
+type Page = "dashboard" | "history" | "settings" | "owners";
+
 const NAV_ITEMS = [
   { label: "dashboard", to: "/app" },
   { label: "history", to: "/app/history" },
@@ -50,7 +52,6 @@ export default function App() {
   const showReadOnlyBanner = Boolean(
     wallet.address && !loading && !error && !isOwner
   );
-
   async function withTx(fn: () => Promise<void>) {
     if (!wallet.address) {
       await wallet.connect();
@@ -222,6 +223,29 @@ export default function App() {
           <div className="py-16 text-center text-sm text-zinc-500">
             Loading contract data…
           </div>
+        ) : page === "dashboard" ? (
+          <DashboardPage
+            activeProposals={activeProposals}
+            owners={owners}
+            dashboardStats={stats}
+            walletAddress={wallet.address}
+            onApprove={handleApprove}
+            onExecute={handleExecute}
+            onRevoke={handleRevoke}
+            onCreateProposal={() => setShowCreate(true)}
+            error={null}
+            loading={loading}
+          />
+        ) : page === "history" ? (
+          <HistoryPage proposals={proposals} onApprove={handleApprove} />
+        ) : page === "owners" ? (
+          <OwnersPage
+            owners={owners}
+            threshold={parseInt(stats.find((s) => s.label === "Threshold")?.value.split(" ")[0] || "0")}
+            totalOwners={owners.length}
+          />
+        ) : page === "settings" ? (
+          <SettingsPage stats={stats} />
         ) : (
           <Routes>
             <Route

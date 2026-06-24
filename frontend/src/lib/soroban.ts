@@ -1,3 +1,15 @@
+export function formatDeadline(ts: bigint): string {
+  return new Date(Number(ts) * 1000).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function shortenAddr(addr: string): string {
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
 export function stroopsToDisplay(value: bigint): string {
   // Soroban token amounts use 7 decimal places (Stellar standard).
   const whole = value / 10_000_000n;
