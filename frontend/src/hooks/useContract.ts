@@ -12,6 +12,7 @@ import type { DashboardStat, Owner, Proposal } from "../types/accord";
 type ContractState = {
   proposals: Proposal[];
   owners: Owner[];
+  ownerAddresses: string[];
   stats: DashboardStat[];
   loading: boolean;
   error: string | null;
@@ -22,6 +23,7 @@ export function useContract(walletAddress: string | null): ContractState {
   const [tick, setTick] = useState(0);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
+  const [ownerAddresses, setOwnerAddresses] = useState<string[]>([]);
   const [stats, setStats] = useState<DashboardStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +67,7 @@ export function useContract(walletAddress: string | null): ContractState {
         if (cancelled) return;
 
         setProposals(proposalsWithApproval);
+        setOwnerAddresses(ownerAddrs);
         setOwners(
           ownerAddrs.map((addr, i) => ({
             address: `${addr.slice(0, 6)}...${addr.slice(-4)}`,
@@ -103,5 +106,5 @@ export function useContract(walletAddress: string | null): ContractState {
     };
   }, [tick, walletAddress]);
 
-  return { proposals, owners, stats, loading, error, refresh };
+  return { proposals, owners, ownerAddresses, stats, loading, error, refresh };
 }

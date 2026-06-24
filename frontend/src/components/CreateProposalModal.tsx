@@ -14,6 +14,11 @@ type Props = {
   onSubmitted: () => void;
 };
 
+function truncateAddress(address: string | null) {
+  if (!address) return "Not connected";
+  return `${address.slice(0, 6)}…${address.slice(-4)}`;
+}
+
 export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Props) {
   const defaultDeadline = () => {
     const d = new Date();
@@ -150,6 +155,21 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
         <div className="space-y-4">
           <div>
             <label className="text-xs text-zinc-400 block mb-1.5">
+              Proposer
+            </label>
+            <div
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm ${
+                walletAddress
+                  ? "bg-zinc-800/60 border-zinc-700/60 text-zinc-300 font-mono"
+                  : "bg-zinc-800/30 border-zinc-700/30 text-zinc-500"
+              } truncate`}
+            >
+              {truncateAddress(walletAddress)}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-zinc-400 block mb-1.5">
               Recipient Address
             </label>
             <input
@@ -175,15 +195,27 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
             </div>
             <div className="w-28">
               <label className="text-xs text-zinc-400 block mb-1.5">Token</label>
-              <select
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-zinc-500"
-              >
-                <option>XLM</option>
-                <option>USDC</option>
-                <option>EURC</option>
-              </select>
+              <div className="grid grid-cols-3 gap-1">
+                {(["XLM", "USDC", "EURC"] as const).map((symbol) => {
+                  const active = token === symbol;
+
+                  return (
+                    <button
+                      key={symbol}
+                      type="button"
+                      onClick={() => setToken(symbol)}
+                      aria-pressed={active}
+                      className={`rounded-lg border px-1.5 py-2 text-[10px] font-medium transition-colors ${
+                        active
+                          ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
+                          : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      {symbol}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -244,16 +276,14 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
           )}
 
           <div className="pt-2">
-            {!walletAddress && (
-              <p className="text-xs text-amber-400 mb-3">
-                Connect your Freighter wallet to submit.
-              </p>
-            )}
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white py-2.5 rounded-lg font-medium transition-colors"
+              disabled={submitting || !walletAddress}
+              title={
+                walletAddress ? undefined : "Connect your Freighter wallet to submit"
+              }
+              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg font-medium transition-colors"
             >
               {submitting ? "Submitting…" : "Submit Proposal"}
             </button>

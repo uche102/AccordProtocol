@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { connectWallet, freighterInstalled, getWalletAddress, getAccountBalances } from "../lib/wallet";
+import { connectWallet, freighterInstalled, getWalletAddress, getAccountBalances, getWalletNetworkPassphrase } from "../lib/wallet";
 
 export type WalletState = {
   installed: boolean;
   address: string | null;
   connecting: boolean;
+  networkMismatch: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
   xlmBalance?: string | null;
@@ -15,6 +16,7 @@ export function useWallet(): WalletState {
   const [installed, setInstalled] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [networkMismatch, setNetworkMismatch] = useState(false);
   const [xlmBalance, setXlmBalance] = useState<string | null>(null);
   const [usdcBalance, setUsdcBalance] = useState<string | null>(null);
 
@@ -23,8 +25,13 @@ export function useWallet(): WalletState {
     freighterInstalled().then((ok) => {
       setInstalled(ok);
       if (ok) {
-        getWalletAddress().then((res) => {
-          if (res.ok) setAddress(res.value);
+        getWalletAddress().then(async (res) => {
+          if (res.ok) {
+            setAddress(res.value);
+            const expected = import.meta.env.VITE_NETWORK_PASSPHRASE;
+            const actual = await getWalletNetworkPassphrase();
+            setNetworkMismatch(actual !== null && actual !== expected);
+          }
         });
       }
     });
@@ -52,8 +59,12 @@ export function useWallet(): WalletState {
     setConnecting(true);
     try {
       const res = await connectWallet();
-      if (res.ok) setAddress(res.value);
-      else alert(`Freighter error: ${res.error}`);
+      if (res.ok) {
+        setAddress(res.value);
+        const expected = import.meta.env.VITE_NETWORK_PASSPHRASE;
+        const actual = await getWalletNetworkPassphrase();
+        setNetworkMismatch(actual !== null && actual !== expected);
+      } else alert(`Freighter error: ${res.error}`);
     } finally {
       setConnecting(false);
     }
@@ -64,7 +75,8 @@ export function useWallet(): WalletState {
     setAddress(null);
     setXlmBalance(null);
     setUsdcBalance(null);
+    setNetworkMismatch(false);
   }, []);
 
-  return { installed, address, connecting, connect, disconnect, xlmBalance, usdcBalance };
+  return { installed, address, connecting, networkMismatch, connect, disconnect, xlmBalance, usdcBalance };
 }
