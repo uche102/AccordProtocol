@@ -33,6 +33,7 @@ export function HistoryPage({
   const [offset, setOffset] = useState<number>(proposals.length);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  
   const noop = () => {};
 
   // Fetch the total count once on mount

@@ -106,14 +106,39 @@ export function ProposalCard({
             </button>
           )}
 
-          {connected && proposal.status === "ready" && (
+          {connected && proposal.status === "ready" && !awaitingConfirmation && (
             <button
               type="button"
               onClick={() => onExecute(proposal.id)}
               className="text-xs bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
+              onClick={() => setAwaitingConfirmation(true)}
+              className="text-xs bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50"
             >
               Execute
             </button>
+          )}
+
+          {connected && proposal.status === "ready" && awaitingConfirmation && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-400">Send this transaction?</span>
+              <button
+                type="button"
+                onClick={() => {
+                  onExecute(proposal.id);
+                  setAwaitingConfirmation(false);
+                }}
+                className="text-xs bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded-lg transition-colors font-medium"
+              >
+                Confirm
+              </button>
+              <button
+                type="button"
+                onClick={() => setAwaitingConfirmation(false)}
+                className="text-xs bg-zinc-700 hover:bg-zinc-600 text-white px-3 py-1 rounded-lg transition-colors font-medium"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
       </div>
