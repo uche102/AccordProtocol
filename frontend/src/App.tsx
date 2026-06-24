@@ -8,15 +8,15 @@ import { useWallet } from "./hooks/useWallet";
 import { approveProposal, executeProposal, revokeProposal } from "./lib/submit";
 import { DashboardPage } from "./pages/DashboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
 import { OwnersPage } from "./pages/OwnersPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 const NAV_ITEMS = [
-  { label: "dashboard", to: "/" },
-  { label: "history", to: "/history" },
-  { label: "owners", to: "/owners" },
-  { label: "settings", to: "/settings" },
+  { label: "dashboard", to: "/app" },
+  { label: "history", to: "/app/history" },
+  { label: "owners", to: "/app/owners" },
+  { label: "settings", to: "/app/settings" },
 ];
 
 export default function App() {
@@ -93,7 +93,7 @@ export default function App() {
     <div className="min-h-screen bg-zinc-950 text-white">
       <header className="border-b border-zinc-800 px-6 py-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-xs font-bold text-black">
               A
             </div>
@@ -101,7 +101,7 @@ export default function App() {
             <span className="hidden font-mono text-xs text-zinc-600 sm:block">
               testnet
             </span>
-          </div>
+          </Link>
 
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ label, to }) => (
@@ -109,7 +109,7 @@ export default function App() {
                 key={label}
                 to={to}
                 className={`rounded-lg px-3 py-1.5 text-sm capitalize transition-colors ${
-                  location.pathname === to
+                  location.pathname === to || (to === "/app" && location.pathname === "/app/")
                     ? "bg-zinc-800 text-white"
                     : "text-zinc-500 hover:text-zinc-300"
                 }`}
@@ -225,7 +225,7 @@ export default function App() {
         ) : (
           <Routes>
             <Route
-              path="/"
+              index
               element={
                 <DashboardPage
                   activeProposals={activeProposals}
@@ -242,13 +242,13 @@ export default function App() {
               }
             />
             <Route
-              path="/history"
+              path="history"
               element={
                 <HistoryPage proposals={proposals} onApprove={handleApprove} />
               }
             />
             <Route
-              path="/owners"
+              path="owners"
               element={
                 <OwnersPage
                   owners={owners}
@@ -257,10 +257,10 @@ export default function App() {
                 />
               }
             />
-            <Route path="/settings" element={<SettingsPage stats={stats} />} />
+            <Route path="settings" element={<SettingsPage stats={stats} />} />
             <Route
               path="*"
-              element={<NotFoundPage onGoHome={() => navigate("/")} />}
+              element={<NotFoundPage onGoHome={() => navigate("/app")} />}
             />
           </Routes>
         )}

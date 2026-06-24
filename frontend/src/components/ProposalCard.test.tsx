@@ -27,6 +27,8 @@ const baseProposal = (overrides: Partial<Proposal> = {}): Proposal => ({
   threshold: 2,
   status: "pending",
   deadline: "Jun 24, 2026",
+  createdAt: "2026-06-24",
+  proposer: "GBXGJZUFVB2F3J2Y5B4S4V6JWYD2H4O3T7XQZT5XKV6S2J5N6Z2Z2Z2Z",
   createdAt: "proposal #42",
   proposer: "GPROPO...SER1",
   userHasApproved: false,

@@ -7,7 +7,7 @@ import {
 } from "@stellar/stellar-sdk";
 import { signTx } from "./wallet";
 
-const RPC_URL = import.meta.env.VITE_SOROBAN_RPC_URL as string;
+const RPC_URL = (import.meta.env.VITE_SOROBAN_RPC_URL as string) || "https://soroban-testnet.stellar.org";
 const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ADDRESS as string;
 const NETWORK_PASSPHRASE = import.meta.env.VITE_NETWORK_PASSPHRASE as string;
 
