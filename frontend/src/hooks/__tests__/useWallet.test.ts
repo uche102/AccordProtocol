@@ -1,27 +1,30 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
+import { vi } from "vitest";
 import { useWallet } from "../useWallet";
 import * as walletLib from "../../lib/wallet";
 
+const mockedWalletLib = vi.mocked(walletLib);
+
 // Mock the wallet library
-jest.mock("../../lib/wallet", () => ({
-  connectWallet: jest.fn(),
-  freighterInstalled: jest.fn(),
-  getWalletAddress: jest.fn(),
-  getAccountBalances: jest.fn().mockResolvedValue({ xlm: "0.00", usdc: "0.00" }),
-  getWalletNetworkPassphrase: jest.fn(),
+vi.mock("../../lib/wallet", () => ({
+  connectWallet: vi.fn(),
+  freighterInstalled: vi.fn(),
+  getWalletAddress: vi.fn(),
+  getAccountBalances: vi.fn().mockResolvedValue({ xlm: "0.00", usdc: "0.00" }),
+  getWalletNetworkPassphrase: vi.fn(),
 }));
 
 describe("useWallet", () => {
   const EXPECTED_NETWORK = import.meta.env.VITE_NETWORK_PASSPHRASE;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (walletLib.freighterInstalled as jest.Mock).mockResolvedValue(false);
+    vi.clearAllMocks();
+    mockedWalletLib.freighterInstalled.mockResolvedValue(false);
   });
 
   it("sets networkMismatch to true on connect if network differs", async () => {
-    (walletLib.connectWallet as jest.Mock).mockResolvedValue({ ok: true, value: "GBX..." });
-    (walletLib.getWalletNetworkPassphrase as jest.Mock).mockResolvedValue("WRONG NETWORK");
+    mockedWalletLib.connectWallet.mockResolvedValue({ ok: true, value: "GBX..." });
+    mockedWalletLib.getWalletNetworkPassphrase.mockResolvedValue("WRONG NETWORK");
 
     const { result } = renderHook(() => useWallet());
 
@@ -36,8 +39,8 @@ describe("useWallet", () => {
   });
 
   it("sets networkMismatch to false on connect if network is correct", async () => {
-    (walletLib.connectWallet as jest.Mock).mockResolvedValue({ ok: true, value: "GBX..." });
-    (walletLib.getWalletNetworkPassphrase as jest.Mock).mockResolvedValue(EXPECTED_NETWORK);
+    mockedWalletLib.connectWallet.mockResolvedValue({ ok: true, value: "GBX..." });
+    mockedWalletLib.getWalletNetworkPassphrase.mockResolvedValue(EXPECTED_NETWORK);
 
     const { result } = renderHook(() => useWallet());
 
@@ -51,9 +54,9 @@ describe("useWallet", () => {
   });
 
   it("checks pre-authorised wallets on load and sets networkMismatch to true if wrong", async () => {
-    (walletLib.freighterInstalled as jest.Mock).mockResolvedValue(true);
-    (walletLib.getWalletAddress as jest.Mock).mockResolvedValue({ ok: true, value: "GBX..." });
-    (walletLib.getWalletNetworkPassphrase as jest.Mock).mockResolvedValue("WRONG NETWORK");
+    mockedWalletLib.freighterInstalled.mockResolvedValue(true);
+    mockedWalletLib.getWalletAddress.mockResolvedValue({ ok: true, value: "GBX..." });
+    mockedWalletLib.getWalletNetworkPassphrase.mockResolvedValue("WRONG NETWORK");
 
     const { result } = renderHook(() => useWallet());
 
@@ -64,8 +67,8 @@ describe("useWallet", () => {
   });
 
   it("does not crash if getWalletNetworkPassphrase returns null", async () => {
-    (walletLib.connectWallet as jest.Mock).mockResolvedValue({ ok: true, value: "GBX..." });
-    (walletLib.getWalletNetworkPassphrase as jest.Mock).mockResolvedValue(null);
+    mockedWalletLib.connectWallet.mockResolvedValue({ ok: true, value: "GBX..." });
+    mockedWalletLib.getWalletNetworkPassphrase.mockResolvedValue(null);
 
     const { result } = renderHook(() => useWallet());
 

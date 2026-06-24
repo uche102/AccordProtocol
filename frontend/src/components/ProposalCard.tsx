@@ -18,6 +18,7 @@ export function ProposalCard({
   onRevoke,
 }: ProposalCardProps) {
   const connected = !!walletAddress;
+  const showApprove = proposal.status === "pending" && !proposal.userHasApproved;
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors">
@@ -47,13 +48,13 @@ export function ProposalCard({
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-600">{proposal.createdAt}</span>
 
-          {connected && !proposal.userHasApproved && proposal.status === "pending" && (
+          {showApprove && (
             <button
               type="button"
               onClick={() => onApprove(proposal.id)}
               className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50"
             >
-              Approve
+              {connected ? "Approve" : "Connect & Approve"}
             </button>
           )}
 
