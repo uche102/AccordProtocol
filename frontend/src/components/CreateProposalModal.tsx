@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createProposal } from "../lib/submit";
-
+import { displayToStroops } from "../lib/soroban";
 // Testnet token addresses — swap for mainnet when ready
 const TOKEN_ADDRESSES: Record<string, string> = {
   XLM: "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
@@ -15,10 +15,17 @@ type Props = {
 };
 
 export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Props) {
+  const defaultDeadline = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return d.toISOString().slice(0, 10);
+  };
+
   const [to, setTo] = useState("");
   const [amount, setAmount] = useState("");
   const [token, setToken] = useState("XLM");
   const [description, setDescription] = useState("");
+  const [deadline, setDeadline] = useState(defaultDeadline);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,11 +51,25 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
       return;
     }
 
-    // Stellar uses 7 decimal places: 1 XLM = 10_000_000 stroops
-    const amountStroops = BigInt(Math.round(amountNum * 10_000_000));
+    const amountStroops = displayToStroops(amountNum);
 
-    // Deadline: 7 days from now (Unix seconds)
-    const deadline = BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 3600);
+    // Deadline validation
+    const deadlineMs = new Date(deadline).getTime();
+    const nowMs = Date.now();
+    const todayMidnight = new Date();
+    todayMidnight.setHours(0, 0, 0, 0);
+    if (deadlineMs <= todayMidnight.getTime()) {
+      setError("Deadline must be in the future.");
+      return;
+    }
+    const maxMs = nowMs + 90 * 24 * 3600 * 1000;
+    if (deadlineMs > maxMs) {
+      setError("Deadline cannot be more than 90 days away.");
+      return;
+    }
+
+    // Deadline: Unix seconds
+    const deadlineUnix = BigInt(Math.floor(deadlineMs / 1000));
 
     setError(null);
     setSubmitting(true);
@@ -59,7 +80,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
         tokenAddr,
         amountStroops,
         description.trim(),
-        deadline
+        deadlineUnix
       );
       onSubmitted();
       onClose();
@@ -133,6 +154,18 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What is this payment for?"
               className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-zinc-400 block mb-1.5">
+              Deadline
+            </label>
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-zinc-500"
             />
           </div>
 
