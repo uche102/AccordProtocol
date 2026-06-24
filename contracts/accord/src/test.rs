@@ -1339,3 +1339,116 @@ fn active_count_stays_accurate_mixed() {
         Err(Ok(ContractError::TooManyActiveProposals))
     );
 }
+
+// ─── cancel_expired ───────────────────────────────────────────────────────────
+
+#[test]
+fn cancel_expired_sweeps_two_expired_proposals() {
+    let (env, client, owner_a, _, _, _, token_client) = setup(1);
+    let recipient = Address::generate(&env);
+
+    let id1 = client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "p1"), &DEADLINE, &ProposalCategory::Transfer);
+    let id2 = client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "p2"), &DEADLINE, &ProposalCategory::Transfer);
+
+    set_timestamp(&env, DEADLINE + 1);
+
+    let mut ids = Vec::new(&env);
+    ids.push_back(id1);
+    ids.push_back(id2);
+    let swept = client.cancel_expired(&owner_a, &ids);
+
+    assert_eq!(swept, 2);
+    assert_eq!(client.get_proposal(&id1).status, ProposalStatus::Expired);
+    assert_eq!(client.get_proposal(&id2).status, ProposalStatus::Expired);
+}
+
+#[test]
+fn cancel_expired_skips_non_expired_proposal() {
+    let long_deadline = DEADLINE + 86_400;
+    let (env, client, owner_a, _, _, _, token_client) = setup(1);
+    let recipient = Address::generate(&env);
+
+    let id1 = client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "short"), &DEADLINE, &ProposalCategory::Transfer);
+    let id2 = client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "long"), &long_deadline, &ProposalCategory::Transfer);
+
+    set_timestamp(&env, DEADLINE + 1);
+
+    let mut ids = Vec::new(&env);
+    ids.push_back(id1);
+    ids.push_back(id2);
+    let swept = client.cancel_expired(&owner_a, &ids);
+
+    assert_eq!(swept, 1);
+    assert_eq!(client.get_proposal(&id2).status, ProposalStatus::Pending);
+}
+
+#[test]
+fn cancel_expired_skips_nonexistent_id() {
+    let (env, client, owner_a, _, _, _, token_client) = setup(1);
+    let recipient = Address::generate(&env);
+
+    let id1 = client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "real"), &DEADLINE, &ProposalCategory::Transfer);
+
+    set_timestamp(&env, DEADLINE + 1);
+
+    let mut ids = Vec::new(&env);
+    ids.push_back(id1);
+    ids.push_back(999_u64);
+    let swept = client.cancel_expired(&owner_a, &ids);
+
+    assert_eq!(swept, 1);
+}
+
+#[test]
+fn cancel_expired_rejects_non_owner() {
+    let (env, client, owner_a, _, _, non_owner, token_client) = setup(1);
+    let recipient = Address::generate(&env);
+
+    client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "x"), &DEADLINE, &ProposalCategory::Transfer);
+
+    set_timestamp(&env, DEADLINE + 1);
+
+    let mut ids = Vec::new(&env);
+    ids.push_back(1_u64);
+
+    assert_eq!(
+        client.try_cancel_expired(&non_owner, &ids),
+        Err(Ok(ContractError::Unauthorized))
+    );
+}
+
+#[test]
+fn cancel_expired_unblocks_active_cap() {
+    let (env, client, owner_a, _, _, _, token_client) = setup(1);
+    let recipient = Address::generate(&env);
+
+    for _ in 0..50 {
+        client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+            &token_client.address, &str(&env, "fill"), &DEADLINE, &ProposalCategory::Transfer);
+    }
+
+    assert_eq!(
+        client.try_create_proposal(&owner_a, &recipient, &1_000_000_i128,
+            &token_client.address, &str(&env, "over"), &DEADLINE, &ProposalCategory::Transfer),
+        Err(Ok(ContractError::TooManyActiveProposals))
+    );
+
+    set_timestamp(&env, DEADLINE + 1);
+
+    let mut ids = Vec::new(&env);
+    for i in 1_u64..=50 {
+        ids.push_back(i);
+    }
+    let swept = client.cancel_expired(&owner_a, &ids);
+    assert_eq!(swept, 50);
+
+    let new_id = client.create_proposal(&owner_a, &recipient, &1_000_000_i128,
+        &token_client.address, &str(&env, "new"), &(DEADLINE + 86_400), &ProposalCategory::Transfer);
+    assert_eq!(new_id, 51);
+}
