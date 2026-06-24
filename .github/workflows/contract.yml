@@ -1,0 +1,58 @@
+name: Smart Contract - Build & CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ci:
+    name: Contract CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install cargo-binstall
+        run: |
+          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install.sh | sh
+
+      - name: Install cargo-audit and cargo-deny
+        run: |
+          cargo binstall -y cargo-audit cargo-deny
+
+      - name: Run cargo audit
+        run: |
+          cargo audit
+
+      - name: Run cargo deny
+        run: |
+          cargo deny check
+
+      - name: Install stellar-cli
+        uses: stellar/stellar-cli@v25.0.0
+
+      - name: Build smart contracts
+        run: |
+          stellar contract build --release
+
+      - name: Report WASM file sizes
+        run: |
+          python3 -c '
+          import os, glob
+          files = glob.glob("target/wasm32*/release/*.wasm")
+          if not files:
+              print("No WASM files found in release target directories.")
+          for f in files:
+              if os.path.isfile(f):
+                  size_bytes = os.path.getsize(f)
+                  size_kb = size_bytes / 1024.0
+                  print(f"Contract: {os.path.basename(f)} | Size: {size_kb:.2f} KB ({size_bytes} bytes)")
+          '
