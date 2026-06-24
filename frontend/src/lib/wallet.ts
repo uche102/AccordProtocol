@@ -4,6 +4,7 @@ import {
   getAddress,
   requestAccess,
   signTransaction,
+  getNetworkDetails,
 } from "@stellar/freighter-api";
 
 export type WalletResult<T> =
@@ -58,6 +59,15 @@ export async function signTx(
     return { ok: false, error: "No signed XDR returned" };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Sign failed" };
+  }
+}
+
+export async function getWalletNetworkPassphrase(): Promise<string | null> {
+  try {
+    const details = await getNetworkDetails();
+    return details.networkPassphrase ?? null;
+  } catch {
+    return null;
   }
 }
 

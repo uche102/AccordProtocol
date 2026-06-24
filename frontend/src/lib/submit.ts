@@ -67,6 +67,34 @@ async function buildAndSubmit(
   throw new Error("Transaction not confirmed within 30s");
 }
 
+async function simulateOnly(
+  callerAddress: string,
+  fn: string,
+  args: xdr.ScVal[]
+): Promise<number> {
+  const account = await server.getAccount(callerAddress);
+  const contract = new Contract(CONTRACT_ID);
+
+  const tx = new TransactionBuilder(account, {
+    fee: "100000",
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(contract.call(fn, ...args))
+    .setTimeout(30)
+    .build();
+
+  const sim = await server.simulateTransaction(tx);
+  if (!rpc.Api.isSimulationSuccess(sim)) {
+    const err = sim as rpc.Api.SimulateTransactionErrorResponse;
+    throw new Error(`Simulation failed: ${err.error ?? "unknown"}`);
+  }
+
+  const minResourceFee = BigInt(sim.minResourceFee);
+  const baseFee = 100000n;
+  const totalStroops = baseFee + minResourceFee;
+  return Number(totalStroops) / 10_000_000;
+}
+
 // ─── Public contract write functions ─────────────────────────────────────────
 // Function names must match the Rust contract exactly.
 
@@ -110,6 +138,24 @@ export async function createProposal(
 ): Promise<void> {
   // Contract signature: create_proposal(proposer, to, amount, token, description, deadline)
   await buildAndSubmit(callerAddress, "create_proposal", [
+    nativeToScVal(callerAddress, { type: "address" }),  // proposer
+    nativeToScVal(to, { type: "address" }),
+    nativeToScVal(amount, { type: "i128" }),
+    nativeToScVal(tokenAddress, { type: "address" }),
+    xdr.ScVal.scvString(description),
+    nativeToScVal(deadlineTs, { type: "u64" }),
+  ]);
+}
+
+export async function estimateCreateProposalFee(
+  callerAddress: string,
+  to: string,
+  tokenAddress: string,
+  amount: bigint,
+  description: string,
+  deadlineTs: bigint
+): Promise<number> {
+  return await simulateOnly(callerAddress, "create_proposal", [
     nativeToScVal(callerAddress, { type: "address" }),  // proposer
     nativeToScVal(to, { type: "address" }),
     nativeToScVal(amount, { type: "i128" }),
