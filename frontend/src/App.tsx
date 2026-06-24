@@ -6,6 +6,8 @@ import { HistoryPage } from "./pages/HistoryPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useContract } from "./hooks/useContract";
 import { useWallet } from "./hooks/useWallet";
+import { useNotifications } from "./hooks/useNotifications";
+import { useEventPolling } from "./hooks/useEventPolling";
 import { approveProposal, executeProposal, revokeProposal } from "./lib/submit";
 import { ProposalCardSkeleton } from "./components/ProposalCardSkeleton";
 import { useEventPolling } from "./hooks/useEventPolling";
@@ -34,6 +36,12 @@ export default function App() {
   }
 
   const { proposals, owners, stats, loading, error, refresh } = useContract(wallet.address);
+
+  // Poll contract events on a 5 second base interval with exponential backoff on failure
+  useEventPolling(refresh, 5000);
+
+  // Wire push notifications for proposals pending approval
+  useNotifications(wallet.address, proposals);
   
   useEventPolling(refresh, 5000);
 
