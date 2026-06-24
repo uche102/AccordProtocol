@@ -10,15 +10,16 @@ import { useNotifications } from "./hooks/useNotifications";
 import { useEventPolling } from "./hooks/useEventPolling";
 import { approveProposal, executeProposal, revokeProposal } from "./lib/submit";
 import { ProposalCardSkeleton } from "./components/ProposalCardSkeleton";
-import { useEventPolling } from "./hooks/useEventPolling";
 
 type Page = "dashboard" | "history" | "settings" | "owners";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { OwnersPage } from "./pages/OwnersPage";
 
 export default function App() {
   const [showCreate, setShowCreate] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const [txPending, setTxPending] = useState(false);
+  const [page, setPage] = useState<Page>("dashboard");
 
   const wallet = useWallet();
 
@@ -48,7 +49,7 @@ export default function App() {
   const activeProposals = proposals.filter((p) =>
     ["pending", "ready"].includes(p.status)
   );
-  const { proposals, owners, stats, loading, error, refresh } = useContract(wallet.address);
+  // const { proposals, owners, stats, loading, error, refresh } = useContract(wallet.address);
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
@@ -85,6 +86,10 @@ export default function App() {
     return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
   }
 
+  function handleGoHome() {
+    setPage("dashboard");
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       <header className="border-b border-zinc-800 px-6 py-4">
@@ -105,7 +110,10 @@ export default function App() {
               <button
                 key={navPage}
                 type="button"
-                onClick={() => setPage(navPage)}
+                onClick={() => setPage(navPage)}>
+                  
+                </button>
+            ))}
             {[
               { label: "dashboard", to: "/" },
               { label: "history", to: "/history" },
@@ -193,6 +201,8 @@ export default function App() {
             onExecute={handleExecute}
             onRevoke={handleRevoke}
             onCreateProposal={() => setShowCreate(true)}
+            error={null}
+            loading
           />
         ) : page === "history" ? (
           <HistoryPage proposals={proposals} onApprove={handleApprove} />
