@@ -7,6 +7,7 @@ import {
   xdr,
 } from "@stellar/stellar-sdk";
 import type { Proposal, ProposalStatus } from "../types/accord";
+import { stroopsToDisplay } from "./soroban";
 
 const RPC_URL = import.meta.env.VITE_SOROBAN_RPC_URL as string;
 const CONTRACT_ID = import.meta.env.VITE_CONTRACT_ADDRESS as string;
@@ -47,13 +48,6 @@ function mapStatus(raw: unknown): ProposalStatus {
   return "pending";
 }
 
-function formatAmount(raw: bigint): string {
-  // Soroban token amounts use 7 decimal places (Stellar standard).
-  const whole = raw / 10_000_000n;
-  const frac = raw % 10_000_000n;
-  if (frac === 0n) return whole.toLocaleString();
-  return `${whole.toLocaleString()}.${frac.toString().padStart(7, "0").replace(/0+$/, "")}`;
-}
 
 function formatDeadline(ts: bigint): string {
   return new Date(Number(ts) * 1000).toLocaleDateString("en-US", {
@@ -72,7 +66,7 @@ export function mapProposal(raw: any, threshold: number): Proposal {
   return {
     id: Number(raw.id),
     to: shortenAddr(String(raw.to)),
-    amount: formatAmount(BigInt(raw.amount)),
+    amount: stroopsToDisplay(BigInt(raw.amount)),
     token: shortenAddr(String(raw.token)),
     description: String(raw.description),
     approvals: Number(raw.approvals),
@@ -111,6 +105,16 @@ export async function getProposalsPaged(
   return Array.isArray(result) ? result : [];
 }
 
+export async function getProposal(id: number): Promise<Proposal> {
+  const [val, thresh] = await Promise.all([
+    simulateView("get_proposal", [
+      nativeToScVal(BigInt(id), { type: "u64" }),
+    ]),
+    getThreshold(),
+  ]);
+  return mapProposal(scValToNative(val), thresh);
+}
+
 export async function hasApproved(
   walletAddress: string,
   proposalId: number
@@ -120,4 +124,33 @@ export async function hasApproved(
     nativeToScVal(BigInt(proposalId), { type: "u64" }),
   ]);
   return scValToNative(val) as boolean;
+}
+
+export async function getLatestLedger(): Promise<number> {
+  try {
+    const res = await server.getLatestLedger();
+    return res.sequence;
+  } catch (err) {
+    console.error("Failed to get latest ledger:", err);
+    throw err;
+  }
+}
+
+export async function getContractEvents(fromLedger: number): Promise<number> {
+  try {
+    const res = await server.getEvents({
+      startLedger: fromLedger,
+      filters: [
+        {
+          type: "contract",
+          contractIds: [CONTRACT_ID],
+        },
+      ],
+      limit: 100,
+    });
+    return res.latestLedger || fromLedger;
+  } catch (err) {
+    console.error("Failed to get contract events:", err);
+    return fromLedger;
+  }
 }

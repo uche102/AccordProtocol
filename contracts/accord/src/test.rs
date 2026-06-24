@@ -849,6 +849,92 @@ fn full_lifecycle_2of3() {
 }
 
 #[test]
+fn full_lifecycle_5of5() {
+    let env = Env::default();
+    env.mock_all_auths();
+    set_timestamp(&env, NOW);
+
+    let owner_a = Address::generate(&env);
+    let owner_b = Address::generate(&env);
+    let owner_c = Address::generate(&env);
+    let owner_d = Address::generate(&env);
+    let owner_e = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let recipient = Address::generate(&env);
+
+    let token_id = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token_client = token::Client::new(&env, &token_id.address());
+    let token_sac = token::StellarAssetClient::new(&env, &token_id.address());
+
+    let contract_id = env.register(AccordContract, ());
+    let client = AccordContractClient::new(&env, &contract_id);
+
+    let mut owners = Vec::new(&env);
+    owners.push_back(owner_a.clone());
+    owners.push_back(owner_b.clone());
+    owners.push_back(owner_c.clone());
+    owners.push_back(owner_d.clone());
+    owners.push_back(owner_e.clone());
+    client.initialize(&owners, &5, &0);
+
+    // Fund the multisig contract so it can pay out proposals.
+    token_sac.mint(&contract_id, &1_000_000_000_000_i128);
+
+    let amount: i128 = 100_000_000;
+
+    let id = client.create_proposal(
+        &owner_a,
+        &recipient,
+        &amount,
+        &token_client.address,
+        &str(&env, "Full lifecycle 5of5"),
+        &DEADLINE,
+    );
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Pending
+    );
+
+    client.approve(&owner_a, &id);
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Pending
+    );
+
+    client.approve(&owner_b, &id);
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Pending
+    );
+
+    client.approve(&owner_c, &id);
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Pending
+    );
+
+    client.approve(&owner_d, &id);
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Pending
+    );
+
+    client.approve(&owner_e, &id);
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Ready
+    );
+
+    let before = token_client.balance(&recipient);
+    client.execute(&owner_a, &id);
+    assert_eq!(token_client.balance(&recipient) - before, amount);
+    assert_eq!(
+        client.get_proposal(&id).status,
+        ProposalStatus::Executed
+    );
+}
+
+#[test]
 fn execute_fails_when_balance_insufficient() {
     let env = Env::default();
     env.mock_all_auths();
