@@ -8,24 +8,23 @@ import { useWallet } from "./hooks/useWallet";
 import { approveProposal, executeProposal, revokeProposal } from "./lib/submit";
 import { DashboardPage } from "./pages/DashboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
 import { OwnersPage } from "./pages/OwnersPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 
 type Page = "dashboard" | "history" | "settings" | "owners";
 
 const NAV_ITEMS = [
-  { label: "dashboard", to: "/" },
-  { label: "history", to: "/history" },
-  { label: "owners", to: "/owners" },
-  { label: "settings", to: "/settings" },
+  { label: "dashboard", to: "/app" },
+  { label: "history", to: "/app/history" },
+  { label: "owners", to: "/app/owners" },
+  { label: "settings", to: "/app/settings" },
 ];
 
 export default function App() {
   const [showCreate, setShowCreate] = useState(false);
   const [txError, setTxError] = useState<string | null>(null);
   const [txPending, setTxPending] = useState(false);
-  const [page, setPage] = useState<Page>("dashboard");
 
   const wallet = useWallet();
   const navigate = useNavigate();
@@ -91,15 +90,11 @@ export default function App() {
     return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
   }
 
-  function handleGoHome() {
-    setPage("dashboard");
-  }
-
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       <header className="border-b border-zinc-800 px-6 py-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-xs font-bold text-black">
               A
             </div>
@@ -107,16 +102,15 @@ export default function App() {
             <span className="hidden font-mono text-xs text-zinc-600 sm:block">
               testnet
             </span>
-          </div>
+          </Link>
 
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ label, to }) => (
               <Link
                 key={label}
                 to={to}
-                onClick={() => setPage(label as Page)}
-                className={`rounded-lg px-3 py-1.5 text-sm capitalize transition-colors ${
-                  location.pathname === to
+                className={`rounded-lg px-3 py-1.5 text-sm capitalize transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none ${
+                  location.pathname === to || (to === "/app" && location.pathname === "/app/")
                     ? "bg-zinc-800 text-white"
                     : "text-zinc-500 hover:text-zinc-300"
                 }`}
@@ -131,7 +125,7 @@ export default function App() {
               href="https://www.freighter.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500"
+              className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               Install Freighter
             </a>
@@ -139,7 +133,7 @@ export default function App() {
             <button
               type="button"
               onClick={wallet.disconnect}
-              className="rounded-lg bg-zinc-800 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
+              className="rounded-lg bg-zinc-800 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               {shortenAddr(wallet.address)}
             </button>
@@ -148,7 +142,7 @@ export default function App() {
               type="button"
               onClick={wallet.connect}
               disabled={wallet.connecting}
-              className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               {wallet.connecting ? "Connecting…" : "Connect Wallet"}
             </button>
@@ -255,7 +249,7 @@ export default function App() {
         ) : (
           <Routes>
             <Route
-              path="/"
+              index
               element={
                 <DashboardPage
                   activeProposals={activeProposals}
@@ -272,13 +266,13 @@ export default function App() {
               }
             />
             <Route
-              path="/history"
+              path="history"
               element={
                 <HistoryPage proposals={proposals} onApprove={handleApprove} />
               }
             />
             <Route
-              path="/owners"
+              path="owners"
               element={
                 <OwnersPage
                   owners={owners}
@@ -287,10 +281,10 @@ export default function App() {
                 />
               }
             />
-            <Route path="/settings" element={<SettingsPage stats={stats} />} />
+            <Route path="settings" element={<SettingsPage stats={stats} />} />
             <Route
               path="*"
-              element={<NotFoundPage onGoHome={() => navigate("/")} />}
+              element={<NotFoundPage onGoHome={() => navigate("/app")} />}
             />
           </Routes>
         )}

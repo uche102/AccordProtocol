@@ -64,7 +64,7 @@ export function mapProposal(raw: any, threshold: number): Proposal {
     deadline: formatDeadline(rawDeadline),
     deadlineTs: Number(rawDeadline),
     createdAt: `proposal #${Number(raw.id)}`,
-    proposer: String(raw.proposer),
+    proposer: shortenAddr(String(raw.proposer)),
     userHasApproved: false,
   };
 }

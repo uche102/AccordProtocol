@@ -1,33 +1,34 @@
+import { vi, describe, it, expect, beforeEach } from "vitest";
 import { estimateCreateProposalFee } from "./submit";
-import { rpc } from "@stellar/stellar-sdk";
 
 // Mock the stellar-sdk to avoid real network calls
-jest.mock("@stellar/stellar-sdk", () => {
-  const original = jest.requireActual("@stellar/stellar-sdk");
+vi.mock("@stellar/stellar-sdk", async () => {
+  const original = await vi.importActual("@stellar/stellar-sdk") as any;
   return {
     ...original,
+    nativeToScVal: vi.fn().mockReturnValue({}),
     rpc: {
       ...original.rpc,
-      Server: jest.fn().mockImplementation(() => ({
-        getAccount: jest.fn().mockResolvedValue({ sequence: "123" }),
-        simulateTransaction: jest.fn().mockResolvedValue({
+      Server: vi.fn().mockImplementation(() => ({
+        getAccount: vi.fn().mockResolvedValue({ sequence: "123" }),
+        simulateTransaction: vi.fn().mockResolvedValue({
           _type: "success",
           minResourceFee: "50000",
         }),
-        sendTransaction: jest.fn().mockRejectedValue(new Error("Should not broadcast")),
+        sendTransaction: vi.fn().mockRejectedValue(new Error("Should not broadcast")),
       })),
       Api: {
-        isSimulationSuccess: jest.fn().mockReturnValue(true),
+        isSimulationSuccess: vi.fn().mockReturnValue(true),
       },
     },
-    Contract: jest.fn().mockImplementation(() => ({
-      call: jest.fn().mockReturnValue({}),
+    Contract: vi.fn().mockImplementation(() => ({
+      call: vi.fn().mockReturnValue({}),
     })),
-    TransactionBuilder: jest.fn().mockImplementation(() => {
+    TransactionBuilder: vi.fn().mockImplementation(() => {
       const builder = {
-        addOperation: jest.fn().mockReturnThis(),
-        setTimeout: jest.fn().mockReturnThis(),
-        build: jest.fn().mockReturnValue({}),
+        addOperation: vi.fn().mockReturnThis(),
+        setTimeout: vi.fn().mockReturnThis(),
+        build: vi.fn().mockReturnValue({}),
       };
       return builder;
     }),
@@ -36,15 +37,15 @@ jest.mock("@stellar/stellar-sdk", () => {
 
 describe("submit utils", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("estimateCreateProposalFee", () => {
     it("returns calculated fee in XLM", async () => {
       const fee = await estimateCreateProposalFee(
-        "GBX...",
-        "GBY...",
-        "TOKEN...",
+        "GXXXX",
+        "GYYYY",
+        "GZZZZ",
         100n,
         "Test proposal",
         1234567890n
@@ -56,17 +57,15 @@ describe("submit utils", () => {
 
     it("uses simulation result but does not broadcast transaction", async () => {
       const fee = await estimateCreateProposalFee(
-        "GBX...",
-        "GBY...",
-        "TOKEN...",
+        "GXXXX",
+        "GYYYY",
+        "GZZZZ",
         100n,
         "Test proposal",
         1234567890n
       );
 
       expect(fee).toBe(0.015);
-      // Ensure we haven't tried to call anything related to signing or broadcasting
-      // Note: we mocked sendTransaction to throw if called.
     });
   });
 });

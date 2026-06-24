@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DashboardStat, Owner, Proposal } from "../types/accord";
 import { ProposalCard } from "../components/ProposalCard";
 import { StatCard } from "../components/StatCard";
@@ -29,11 +29,16 @@ export function DashboardPage({
   loading,
   error,
 }: DashboardPageProps) {
-  const [sortByDeadline, setSortByDeadline] = useState(false);
+  const readyCount = activeProposals.filter((p) => p.status === "ready").length;
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const prevReadyCount = useRef(readyCount);
 
-  const displayedProposals = sortByDeadline
-    ? [...activeProposals].sort((a, b) => a.deadlineTs - b.deadlineTs)
-    : activeProposals;
+  useEffect(() => {
+    if (readyCount > prevReadyCount.current) {
+      setBannerDismissed(false);
+    }
+    prevReadyCount.current = readyCount;
+  }, [readyCount]);
 
   return (
     <>
@@ -51,12 +56,27 @@ export function DashboardPage({
               onClick={() => {
                
               }}
-              className="underline hover:text-red-300 ml-4 shrink-0"
+              className="underline hover:text-red-300 ml-4 shrink-0 focus:ring-2 focus:ring-zinc-400 focus:outline-none rounded"
             >
               Dismiss
             </button>
           </div>
         )}
+      {readyCount > 0 && !bannerDismissed && (
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3 mb-6 text-sm text-emerald-400 flex items-center justify-between">
+          <span>
+            {readyCount} {readyCount === 1 ? "proposal is" : "proposals are"} ready to execute.
+          </span>
+          <button
+            type="button"
+            onClick={() => setBannerDismissed(true)}
+            aria-label="Dismiss"
+            className="hover:text-emerald-300 ml-4 shrink-0 focus:ring-2 focus:ring-zinc-400 focus:outline-none rounded"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold">Active Proposals</h2>
         <div className="flex items-center gap-3">
