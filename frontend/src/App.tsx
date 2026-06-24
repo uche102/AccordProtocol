@@ -108,7 +108,7 @@ export default function App() {
               <Link
                 key={label}
                 to={to}
-                className={`rounded-lg px-3 py-1.5 text-sm capitalize transition-colors ${
+                className={`rounded-lg px-3 py-1.5 text-sm capitalize transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none ${
                   location.pathname === to || (to === "/app" && location.pathname === "/app/")
                     ? "bg-zinc-800 text-white"
                     : "text-zinc-500 hover:text-zinc-300"
@@ -124,7 +124,7 @@ export default function App() {
               href="https://www.freighter.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500"
+              className="rounded-lg bg-amber-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               Install Freighter
             </a>
@@ -132,7 +132,7 @@ export default function App() {
             <button
               type="button"
               onClick={wallet.disconnect}
-              className="rounded-lg bg-zinc-800 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700"
+              className="rounded-lg bg-zinc-800 px-4 py-1.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-700 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               {shortenAddr(wallet.address)}
             </button>
@@ -141,7 +141,7 @@ export default function App() {
               type="button"
               onClick={wallet.connect}
               disabled={wallet.connecting}
-              className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50"
+              className="rounded-lg bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:opacity-50 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               {wallet.connecting ? "Connecting…" : "Connect Wallet"}
             </button>

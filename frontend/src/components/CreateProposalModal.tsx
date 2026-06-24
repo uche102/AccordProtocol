@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createProposal, estimateCreateProposalFee } from "../lib/submit";
 import { displayToStroops } from "../lib/soroban";
 import { StrKey } from "@stellar/stellar-sdk";
@@ -39,6 +39,29 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
   const [feeEstimate, setFeeEstimate] = useState<number | null>(null);
   const [feeLoading, setFeeLoading] = useState(false);
   const [feeError, setFeeError] = useState(false);
+
+  const recipientInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    if (recipientInputRef.current) {
+      recipientInputRef.current.focus();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+        previousActiveElement.focus();
+      }
+    };
+  }, [onClose]);
 
   const canCalculateFee = Boolean(
     walletAddress && to.trim() && amount.trim() && description.trim()
@@ -146,14 +169,21 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          onClose();
+        }
+      }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+    >
       <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 w-full max-w-md">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-white font-semibold text-lg">New Proposal</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-300 text-xl"
+            className="text-zinc-500 hover:text-zinc-300 text-xl focus:ring-2 focus:ring-zinc-400 focus:outline-none rounded-md"
           >
             ✕
           </button>
@@ -180,6 +210,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
               Recipient Address
             </label>
             <input
+              ref={recipientInputRef}
               value={to}
               onChange={(e) => {
                 setTo(e.target.value);
@@ -187,7 +218,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
               }}
               onBlur={() => setRecipientTouched(true)}
               placeholder="G..."
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm font-mono placeholder-zinc-600 focus:ring-2 focus:ring-zinc-400 focus:outline-none focus:border-zinc-500"
             />
             {recipientTouched && !StrKey.isValidEd25519PublicKey(to.trim()) && (
               <p className="text-xs text-red-400 mt-1">Enter a valid Stellar address</p>
@@ -204,7 +235,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
                 type="number"
                 min="0"
                 step="any"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:ring-2 focus:ring-zinc-400 focus:outline-none focus:border-zinc-500"
               />
             </div>
             <div className="w-28">
@@ -219,7 +250,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
                       type="button"
                       onClick={() => setToken(symbol)}
                       aria-pressed={active}
-                      className={`rounded-lg border px-1.5 py-2 text-[10px] font-medium transition-colors ${
+                      className={`rounded-lg border px-1.5 py-2 text-[10px] font-medium transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none ${
                         active
                           ? "border-emerald-500 bg-emerald-500/20 text-emerald-300"
                           : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
@@ -241,7 +272,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What is this payment for?"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm placeholder-zinc-600 focus:ring-2 focus:ring-zinc-400 focus:outline-none focus:border-zinc-500"
             />
           </div>
 
@@ -253,7 +284,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
               type="date"
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-zinc-500"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-zinc-400 focus:outline-none focus:border-zinc-500"
             />
           </div>
 
@@ -276,7 +307,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
                 type="button"
                 onClick={handleCalculateFee}
                 disabled={feeLoading}
-                className="text-xs bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-md transition-colors"
+                className="text-xs bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-md transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none"
               >
                 Calculate fee
               </button>
@@ -297,7 +328,7 @@ export function CreateProposalModal({ walletAddress, onClose, onSubmitted }: Pro
               title={
                 walletAddress ? undefined : "Connect your Freighter wallet to submit"
               }
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg font-medium transition-colors"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-lg font-medium transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               {submitting ? "Submitting…" : "Submit Proposal"}
             </button>

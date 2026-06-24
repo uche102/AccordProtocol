@@ -61,7 +61,7 @@ export function ProposalCard({
             <button
               type="button"
               onClick={() => copyAddress(proposal.proposer)}
-              className="text-zinc-500 hover:text-zinc-700 transition-colors cursor-pointer"
+              className="text-zinc-500 hover:text-zinc-700 transition-colors cursor-pointer focus:ring-2 focus:ring-zinc-400 focus:outline-none rounded"
               title={copied ? "Copied!" : "Copy address"}
             >
               {copied ? (
@@ -90,7 +90,7 @@ export function ProposalCard({
             <button
               type="button"
               onClick={() => onApprove(proposal.id)}
-              className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50"
+              className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               {connected ? "Approve" : "Connect & Approve"}
             </button>
@@ -100,7 +100,7 @@ export function ProposalCard({
             <button
               type="button"
               onClick={() => onRevoke(proposal.id)}
-              className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50"
+              className="text-xs bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
             >
               Revoke
             </button>
@@ -109,6 +109,8 @@ export function ProposalCard({
           {connected && proposal.status === "ready" && !awaitingConfirmation && (
             <button
               type="button"
+              onClick={() => onExecute(proposal.id)}
+              className="text-xs bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50 focus:ring-2 focus:ring-zinc-400 focus:outline-none"
               onClick={() => setAwaitingConfirmation(true)}
               className="text-xs bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded-lg transition-colors font-medium disabled:opacity-50"
             >

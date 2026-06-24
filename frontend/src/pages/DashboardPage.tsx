@@ -56,7 +56,7 @@ export function DashboardPage({
               onClick={() => {
                
               }}
-              className="underline hover:text-red-300 ml-4 shrink-0"
+              className="underline hover:text-red-300 ml-4 shrink-0 focus:ring-2 focus:ring-zinc-400 focus:outline-none rounded"
             >
               Dismiss
             </button>
@@ -71,7 +71,7 @@ export function DashboardPage({
             type="button"
             onClick={() => setBannerDismissed(true)}
             aria-label="Dismiss"
-            className="hover:text-emerald-300 ml-4 shrink-0"
+            className="hover:text-emerald-300 ml-4 shrink-0 focus:ring-2 focus:ring-zinc-400 focus:outline-none rounded"
           >
             ✕
           </button>
@@ -82,7 +82,7 @@ export function DashboardPage({
         <button
           type="button"
           onClick={onCreateProposal}
-          className="text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors"
+          className="text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none"
         >
           + New
         </button>
