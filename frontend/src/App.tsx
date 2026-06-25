@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Link, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { CreateProposalModal } from "./components/CreateProposalModal";
 import { useContract } from "./hooks/useContract";
 import { useEventPolling } from "./hooks/useEventPolling";
@@ -9,6 +15,7 @@ import { approveProposal, executeProposal, revokeProposal } from "./lib/submit";
 import { DashboardPage } from "./pages/DashboardPage";
 import { HistoryPage } from "./pages/HistoryPage";
 import { OwnersPage } from "./pages/OwnersPage";
+import { ProposalDetailPage } from "./pages/ProposalDetailPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
@@ -30,27 +37,20 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const {
-    proposals,
-    owners,
-    ownerAddresses,
-    stats,
-    loading,
-    error,
-    refresh,
-  } = useContract(wallet.address);
+  const { proposals, owners, ownerAddresses, stats, loading, error, refresh } =
+    useContract(wallet.address);
 
   useEventPolling(refresh, 5000);
   useNotifications(wallet.address, proposals);
 
   const activeProposals = proposals.filter((proposal) =>
-    ["pending", "ready"].includes(proposal.status)
+    ["pending", "ready"].includes(proposal.status),
   );
   const isOwner = Boolean(
-    wallet.address && ownerAddresses.includes(wallet.address)
+    wallet.address && ownerAddresses.includes(wallet.address),
   );
   const showReadOnlyBanner = Boolean(
-    wallet.address && !loading && !error && !isOwner
+    wallet.address && !loading && !error && !isOwner,
   );
   async function withTx(fn: () => Promise<void>) {
     if (!wallet.address) {
@@ -85,7 +85,11 @@ export default function App() {
         : proposal.status;
     return withTx(() => approveProposal(wallet.address!, id), {
       id,
-      patch: { approvals: newApprovals, status: newStatus, userHasApproved: true },
+      patch: {
+        approvals: newApprovals,
+        status: newStatus,
+        userHasApproved: true,
+      },
     });
   };
 
@@ -101,7 +105,7 @@ export default function App() {
   const thresholdStat = stats.find((stat) => stat.label === "Threshold");
   const threshold = Number.parseInt(
     thresholdStat?.value.split(" ")[0] ?? "0",
-    10
+    10,
   );
 
   function shortenAddr(addr: string) {
@@ -112,7 +116,10 @@ export default function App() {
     <div className="min-h-screen bg-zinc-950 text-white">
       <header className="border-b border-zinc-800 px-6 py-4">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-xs font-bold text-black">
               A
             </div>
@@ -128,7 +135,8 @@ export default function App() {
                 key={label}
                 to={to}
                 className={`rounded-lg px-3 py-1.5 text-sm capitalize transition-colors focus:ring-2 focus:ring-zinc-400 focus:outline-none ${
-                  location.pathname === to || (to === "/app" && location.pathname === "/app/")
+                  location.pathname === to ||
+                  (to === "/app" && location.pathname === "/app/")
                     ? "bg-zinc-800 text-white"
                     : "text-zinc-500 hover:text-zinc-300"
                 }`}
@@ -187,7 +195,9 @@ export default function App() {
 
         {wallet.networkMismatch && (
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 mb-6 text-sm text-amber-400">
-            Your wallet network does not match this app. Expected network: {import.meta.env.VITE_NETWORK_PASSPHRASE}. Switch Freighter network to continue.
+            Your wallet network does not match this app. Expected network:{" "}
+            {import.meta.env.VITE_NETWORK_PASSPHRASE}. Switch Freighter network
+            to continue.
           </div>
         )}
 
@@ -222,11 +232,13 @@ export default function App() {
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold">Freighter wallet required</h1>
+            <h1 className="text-2xl font-semibold">
+              Freighter wallet required
+            </h1>
             <p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">
               Freighter is the supported browser extension for signing Stellar
-              transactions in Accord. Install it to connect a wallet and use
-              the app.
+              transactions in Accord. Install it to connect a wallet and use the
+              app.
             </p>
             <a
               href="https://www.freighter.app"
@@ -260,7 +272,8 @@ export default function App() {
           <OwnersPage
             owners={owners}
             threshold={parseInt(
-              stats.find((s) => s.label === "Threshold")?.value.split(" ")[0] || "0"
+              stats.find((s) => s.label === "Threshold")?.value.split(" ")[0] ||
+                "0",
             )}
             totalOwners={owners.length}
           />
@@ -302,6 +315,7 @@ export default function App() {
               }
             />
             <Route path="settings" element={<SettingsPage stats={stats} />} />
+            <Route path="proposals/:id" element={<ProposalDetailPage />} />
             <Route
               path="*"
               element={<NotFoundPage onGoHome={() => navigate("/app")} />}
