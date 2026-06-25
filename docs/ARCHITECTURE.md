@@ -88,6 +88,64 @@ approvals     u32
 status        ProposalStatus
 ```
 
+### Key Naming Conventions
+
+Soroban storage keys must be **short symbols** (≤ 9 bytes) because the XDR `Symbol` type allocates one byte per character with no heap overhead — longer names would require a `Bytes` type, adding allocation overhead and increasing each key's on-chain storage footprint.
+
+Accord uses two patterns:
+
+**Singleton keys** — short uppercase abbreviations for values that exist exactly once per deployed contract:
+
+| Key | Full meaning |
+|-----|-------------|
+| `INIT` | Initialization guard |
+| `THRESH` | Approval threshold (M in M-of-N) |
+| `NEXT` | Monotonic proposal ID counter |
+| `ACTCNT` | Count of currently active proposals |
+| `TLOCK` | Time-lock delay in seconds |
+| `OWNERS` | Owner address list |
+
+**Tuple keys** — two- or three-part tuples for per-entity records, where the first element is a short symbol namespace:
+
+| Tuple | Description |
+|-------|-------------|
+| `("PROP", id)` | Proposal record keyed by proposal ID (u64) |
+| `("APPR", id, owner)` | Approval flag keyed by proposal ID and approver address |
+
+Tuples are preferred over concatenated strings because Soroban hashes the entire key structure natively — string concatenation would require heap allocation and introduces ambiguity (`"PROP1"` vs `"PRO" + "P1"` are indistinguishable as strings, but distinct as tuples). Tuple keys are zero-copy, structurally unambiguous, and compose cleanly with Soroban's type-safe storage API.
+
+### Storage Cost Per Proposal
+
+Each proposal creates a fixed number of persistent ledger entries:
+
+- **1** `("PROP", id)` entry for the proposal record itself
+- **Up to N** `("APPR", id, owner)` entries, where N is the number of owners who have voted
+
+For a **5-of-7 multisig** (7 owners, all casting a vote), one proposal creates at most **8 persistent entries** (1 proposal + 7 approval entries), each billed at ~0.052 XLM per 30-day bump period.
+
+The protocol enforces two caps that bound worst-case total storage:
+
+| Cap | Value | Rationale |
+|-----|-------|-----------|
+| Active-proposal limit (`ACTCNT` ≤ 50) | 50 proposals | Bounds simultaneous persistent proposal entries |
+| Owner list limit | 20 owners | Bounds approval entries per proposal |
+
+**Worst-case total persistent entries**: 50 proposals × (1 proposal entry + 20 approval entries) = **1,050 entries** at ~0.052 XLM each ≈ **~54.6 XLM per 30-day bump cycle**.
+
+In practice, most deployments have far fewer than 20 owners and many entries are bumped during normal use rather than at the maximum full-expiry cost.
+
+### TTL Bump Rationale
+
+Accord uses a **threshold-and-bump** pattern rather than a fixed-expiry TTL for three reasons:
+
+1. **Entries extend on access, not on a fixed schedule.** Every read or write of a storage entry calls `extend_ttl`; an entry that is accessed regularly will never expire, regardless of calendar time.
+
+2. **The one-day threshold prevents unnecessary writes.** If an entry's remaining TTL already exceeds the threshold (17,280 ledgers ≈ 1 day), `extend_ttl` is a no-op — no ledger storage is written and no rent is charged for that call. This keeps routine transaction costs low for frequently-accessed entries.
+
+3. **The 30-day bump provides a generous safety margin.** When the TTL *is* below the threshold, it is pushed forward 518,400 ledgers (≈ 30 days). Even a contract that goes completely unused for three weeks will not lose on-chain state.
+
+A **fixed-expiry** model (e.g. "entries expire at a predetermined ledger") would require either a privileged renewal transaction sent on a strict schedule or acceptance that entries disappear on a known date — both are operationally fragile for a multisig holding real funds. The threshold-and-bump pattern ties entry lifetime to actual usage rather than to a calendar.
+
 ### Storage Cost Methodology
 
 Soroban charges rent based on entry size and TTL extension length (CAP-0046-08):
@@ -182,12 +240,56 @@ create_proposal()
 
 ## 5. Event Schema
 
+The contract emits events using `env.events().publish()`. Each Soroban event has two components that external consumers must understand:
+
+**Event envelope structure:**
+- **Contract address** — the deployed Accord contract ID, which Soroban attaches implicitly to every event. External consumers use this as a first-level filter to select only events from a specific deployment.
+- **Topic string** — a short symbol published explicitly by the contract (`"created"`, `"approved"`, `"revoked"`, `"executed"`). This is the second filter consumers apply to select a specific event type.
+- **Data payload** — a typed struct carrying the event details, as described in the table below.
+
+The contract address plus one topic string together uniquely identify a stream of events from a specific action type on a specific deployment.
+
 | Topics | Data Type | Consumer |
 |--------|-----------|----------|
 | `("created",)` | `ProposalCreatedEvent { id, proposer, to, amount, threshold }` | Proposal feed |
 | `("approved",)` | `ProposalApprovedEvent { id, approver, approvals, threshold }` | Approval bar update |
 | `("revoked",)` | `ProposalRevokedEvent { id, approver, approvals }` | Approval bar update |
 | `("executed",)` | `ProposalExecutedEvent { id, executor, to, amount }` | Execution history |
+
+### Indexing Accord Events
+
+External services — dashboards, notification systems, auditing tools — can consume Accord events through three approaches, each suited to different latency and persistence requirements:
+
+**1. Soroban RPC `getEvents` polling (best for one-off queries)**
+
+Query the Soroban RPC `getEvents` endpoint directly, filtering by the contract ID and topic string. Use the `startLedger` parameter to paginate through historical events. This is the simplest approach and requires no third-party infrastructure, but depends on the RPC node retaining historical events within its availability window (see [Event Availability](#event-availability) below).
+
+```
+POST /soroban/rpc
+{ "method": "getEvents",
+  "params": { "startLedger": <N>,
+               "filters": [{ "type": "contract",
+                             "contractIds": ["<ACCORD_CONTRACT_ID>"],
+                             "topics": [["created"]] }] } }
+```
+
+**2. Stellar Horizon API or event streaming (best for real-time dashboards)**
+
+The Stellar Horizon API exposes a `/transactions` endpoint with server-sent events (SSE) support, allowing a dashboard to stream ledger closes and parse Soroban event metadata from transaction results in near-real-time. This is well-suited for live approval-bar updates and proposal feed refreshes, though it requires parsing the Soroban `OperationResult` XDR to extract event payloads.
+
+**3. Mercury or a dedicated Soroban indexer (best for persistent long-term indexing)**
+
+Services such as [Mercury](https://mercurydata.app) subscribe to contract events via a webhook or subscription API and store them in a queryable database. This is the correct approach for auditing tools, analytics pipelines, or any consumer that needs events older than the standard RPC retention window. Configure a subscription with the Accord contract ID and desired topic filters; Mercury will forward matching events to a webhook endpoint as they are emitted.
+
+### Event Availability
+
+Soroban events are stored as part of ledger close metadata and are only available from standard RPC nodes for a **limited number of ledgers** (the exact window depends on the node operator's configuration — typically 17,280 ledgers, approximately one day on Testnet). Events older than this window are permanently unavailable from a standard node.
+
+For long-term event history, use one of the following:
+- A **self-hosted archival Soroban node** configured with `DISABLE_TX_META_EXPIRY=true` (or equivalent) to retain all historical ledger metadata.
+- A **third-party indexing service** such as Mercury, which maintains its own persistent event store.
+
+See issue #103 and the TTL documentation in Section 3 for context on how on-chain data persistence works more broadly.
 
 ## 6. Frontend Polling Strategy
 
@@ -208,3 +310,13 @@ All token amounts are stored and transferred in the token's **smallest unit** (s
 Frontend utilities should live in `frontend/src/lib/soroban.ts`:
 - `toBaseUnit(amount: string, decimals: number): bigint`
 - `fromBaseUnit(amount: bigint, decimals: number): string`
+
+## 8. Related Documents
+
+| Document | Description |
+|----------|-------------|
+| [DESIGN.md](DESIGN.md) | Design decisions — why the protocol is built the way it is |
+| [docs/guides/connecting-your-wallet.md](guides/connecting-your-wallet.md) | End-user guide: Freighter setup and Testnet funding |
+| [docs/guides/reading-the-dashboard.md](guides/reading-the-dashboard.md) | End-user guide: proposal list, status badges, and approval bar |
+| [CONTRACT_API.md](CONTRACT_API.md) | Full contract function reference |
+| [SETUP.md](SETUP.md) | Developer setup and deployment instructions |
