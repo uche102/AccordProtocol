@@ -170,15 +170,15 @@
                   "address": "CACMVW2KK4H5FZDFF2AUCAKQTEJMZZWJUIZF23XMRVYQBSXYLHZ6BKWN"
                 },
                 {
-                  "string": "Short window"
+                  "string": "Developer grant"
                 },
                 {
-                  "u64": "4600"
+                  "u64": "87400"
                 },
                 {
                   "vec": [
                     {
-                      "symbol": "Transfer"
+                      "symbol": "Grant"
                     }
                   ]
                 }
@@ -194,7 +194,7 @@
   "ledger": {
     "protocol_version": 25,
     "sequence_number": 0,
-    "timestamp": 4601,
+    "timestamp": 1000,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
     "base_reserve": 0,
     "min_persistent_entry_ttl": 4096,
@@ -407,7 +407,7 @@
                     "val": {
                       "vec": [
                         {
-                          "symbol": "Transfer"
+                          "symbol": "Grant"
                         }
                       ]
                     }
@@ -417,7 +417,7 @@
                       "symbol": "deadline"
                     },
                     "val": {
-                      "u64": "4600"
+                      "u64": "87400"
                     }
                   },
                   {
@@ -425,7 +425,7 @@
                       "symbol": "description"
                     },
                     "val": {
-                      "string": "Short window"
+                      "string": "Developer grant"
                     }
                   },
                   {
