@@ -921,6 +921,42 @@ impl AccordContract {
         Ok(())
     }
 
+    /// Bulk-sweeps a batch of proposals, marking each expired one as `Expired`
+    /// and decrementing the active-proposal counter once per proposal swept.
+    /// Non-existent IDs and non-expired proposals are silently skipped.
+    /// Only owners may call this function.
+    ///
+    /// Returns the number of proposals actually swept.
+    pub fn cancel_expired(
+        env: Env,
+        caller: Address,
+        ids: Vec<u64>,
+    ) -> Result<u32, ContractError> {
+        caller.require_auth();
+        require_owner(&env, &caller)?;
+
+        let mut swept: u32 = 0;
+
+        for id in ids.iter() {
+            let mut proposal = match read_proposal(&env, id) {
+                Ok(p) => p,
+                Err(_) => continue,
+            };
+
+            if matches!(derive_status(&env, &proposal), ProposalStatus::Expired) {
+                proposal.status = ProposalStatus::Expired;
+                write_proposal(&env, &proposal);
+                let active = read_active_count(&env);
+                if active > 0 {
+                    write_active_count(&env, active - 1);
+                }
+                swept = swept.saturating_add(1);
+            }
+        }
+
+        Ok(swept)
+    }
+
     // ─── Read-Only Queries ───────────────────────────────────────────────────
 
     /// Returns the addresses of owners who have currently approved `proposal_id`

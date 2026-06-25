@@ -61,6 +61,10 @@ export default function App() {
     setTxError(null);
     setTxPending(true);
 
+    if (optimisticPatch) {
+      optimisticUpdate(optimisticPatch.id, optimisticPatch.patch);
+    }
+
     try {
       await fn();
       refresh();
@@ -71,11 +75,25 @@ export default function App() {
     }
   }
 
-  const handleApprove = (id: number) =>
-    withTx(() => approveProposal(wallet.address!, id));
+  const handleApprove = (id: number) => {
+    const proposal = proposals.find((p) => p.id === id);
+    if (!proposal) return withTx(() => approveProposal(wallet.address!, id));
+    const newApprovals = proposal.approvals + 1;
+    const newStatus: ProposalStatus =
+      newApprovals >= proposal.threshold && proposal.status === "pending"
+        ? "ready"
+        : proposal.status;
+    return withTx(() => approveProposal(wallet.address!, id), {
+      id,
+      patch: { approvals: newApprovals, status: newStatus, userHasApproved: true },
+    });
+  };
 
   const handleExecute = (id: number) =>
-    withTx(() => executeProposal(wallet.address!, id));
+    withTx(() => executeProposal(wallet.address!, id), {
+      id,
+      patch: { status: "executed" as ProposalStatus },
+    });
 
   const handleRevoke = (id: number) =>
     withTx(() => revokeProposal(wallet.address!, id));
@@ -241,7 +259,9 @@ export default function App() {
         ) : page === "owners" ? (
           <OwnersPage
             owners={owners}
-            threshold={parseInt(stats.find((s) => s.label === "Threshold")?.value.split(" ")[0] || "0")}
+            threshold={parseInt(
+              stats.find((s) => s.label === "Threshold")?.value.split(" ")[0] || "0"
+            )}
             totalOwners={owners.length}
           />
         ) : page === "settings" ? (
